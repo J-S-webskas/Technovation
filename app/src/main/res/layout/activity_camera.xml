@@ -22,18 +22,18 @@
         <TextView
             android:id="@+id/Tittle"
             android:layout_width="match_parent"
-            android:layout_height="60dp"
+            android:layout_height="50dp"
             android:background="@color/darkGreen"
             android:paddingVertical="5dp"
-            android:text="BioMS"
+            android:text="Record Session"
             android:textAlignment="center"
             android:textColor="@color/white"
-            android:textSize="40sp"
+            android:textSize="32sp"
             android:textStyle="bold" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
-    <androidx.cardview.widget.CardView
+    <!--<androidx.cardview.widget.CardView
         android:id="@+id/symptomsCard"
         android:layout_width="402dp"
         android:layout_height="191dp"
@@ -54,7 +54,7 @@
             android:layout_marginTop="10dp"
             android:layout_marginLeft="10dp"
             android:textSize="15sp"
-            android:textStyle="bold"/>
+            android:textStyle="bold"/>-->
 
         <!--<ScrollView
         android:id="@+id/scrollView2"
@@ -63,7 +63,7 @@
 
         <!--</ScrollView>-->
 
-    </androidx.cardview.widget.CardView>
+    <!--</androidx.cardview.widget.CardView>-->
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/navLayout"
@@ -109,6 +109,209 @@
             app:layout_constraintEnd_toEndOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/speed"
+        android:layout_width="402dp"
+        android:layout_height="70dp"
+        android:elevation="200dp"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="20dp"
+        app:layout_constraintBottom_toTopOf="@+id/endurance"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginLeft="3dp"
+        android:layout_marginBottom="10dp">
+
+        <Button
+            android:id="@+id/recordSpeed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Record"
+            android:layout_marginTop="10dp"
+            android:layout_marginLeft="290dp"/>
+
+        <TextView
+            android:id="@+id/textView7"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Walking Speed"
+            android:textSize="25sp"
+            android:textStyle="bold"
+            android:layout_marginLeft="10dp"
+            android:layout_margin="15dp"/>
+
+    </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/endurance"
+        android:layout_width="402dp"
+        android:layout_height="70dp"
+        android:elevation="200dp"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="20dp"
+        app:layout_constraintBottom_toTopOf="@+id/balance"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginLeft="3dp"
+        android:layout_marginBottom="10dp">
+
+        <Button
+            android:id="@+id/recordEndurance"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="290dp"
+            android:layout_marginTop="10dp"
+            android:text="Record" />
+
+        <TextView
+            android:id="@+id/textView8"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="15dp"
+            android:layout_marginLeft="10dp"
+            android:text="Walking Endurance"
+            android:textSize="25sp"
+            android:textStyle="bold" />
+
+    </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/balance"
+        android:layout_width="402dp"
+        android:layout_height="70dp"
+        android:elevation="200dp"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="20dp"
+        app:layout_constraintBottom_toTopOf="@+id/dualTest"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginLeft="3dp"
+        android:layout_marginBottom="10dp">
+
+        <Button
+            android:id="@+id/recordbalance"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="290dp"
+            android:layout_marginTop="10dp"
+            android:text="Record" />
+
+        <TextView
+            android:id="@+id/textView9"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="15dp"
+            android:layout_marginLeft="10dp"
+            android:text="Balance / Posutre"
+            android:textSize="25sp"
+            android:textStyle="bold" />
+
+    </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/dualTest"
+        android:layout_width="402dp"
+        android:layout_height="70dp"
+        android:elevation="200dp"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="20dp"
+        app:layout_constraintBottom_toTopOf="@+id/stiffness"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginLeft="3dp"
+        android:layout_marginBottom="10dp">
+
+        <Button
+            android:id="@+id/recordDual"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="290dp"
+            android:layout_marginTop="10dp"
+            android:text="Record" />
+
+        <TextView
+            android:id="@+id/textView10"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="15dp"
+            android:layout_marginLeft="10dp"
+            android:text="Dual Test"
+            android:textSize="25sp"
+            android:textStyle="bold" />
+
+    </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/stiffness"
+        android:layout_width="402dp"
+        android:layout_height="70dp"
+        android:elevation="200dp"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="20dp"
+        app:layout_constraintBottom_toTopOf="@+id/sensoryAtaxia"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginLeft="3dp"
+        android:layout_marginBottom="10dp">
+
+        <Button
+            android:id="@+id/recordStiffness"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="290dp"
+            android:layout_marginTop="10dp"
+            android:text="Record" />
+
+        <TextView
+            android:id="@+id/textView11"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="15dp"
+            android:layout_marginLeft="10dp"
+            android:text="Muscle Stiffness"
+            android:textSize="25sp"
+            android:textStyle="bold" />
+
+    </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/sensoryAtaxia"
+        android:layout_width="402dp"
+        android:layout_height="70dp"
+        android:elevation="200dp"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="20dp"
+        app:layout_constraintBottom_toTopOf="@+id/navLayout"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginLeft="3dp"
+        android:layout_marginBottom="35dp">
+
+        <Button
+            android:id="@+id/recordSensory"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="290dp"
+            android:layout_marginTop="10dp"
+            android:text="Record" />
+
+        <TextView
+            android:id="@+id/textView12"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="15dp"
+            android:layout_marginLeft="10dp"
+            android:text="Sensory Ataxia Test"
+            android:textSize="25sp"
+            android:textStyle="bold" />
+    </androidx.cardview.widget.CardView>
+
+    <Button
+        android:id="@+id/how"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="See How to Record Symptoms"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.049"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/appBarLayout" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

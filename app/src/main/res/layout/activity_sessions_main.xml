@@ -22,13 +22,13 @@
         <TextView
             android:id="@+id/Tittle"
             android:layout_width="match_parent"
-            android:layout_height="60dp"
+            android:layout_height="50dp"
             android:background="@color/darkGreen"
             android:paddingVertical="5dp"
-            android:text="BioMS"
+            android:text="Sessions"
             android:textAlignment="center"
             android:textColor="@color/white"
-            android:textSize="40sp"
+            android:textSize="32sp"
             android:textStyle="bold" />
 
     </com.google.android.material.appbar.AppBarLayout>
