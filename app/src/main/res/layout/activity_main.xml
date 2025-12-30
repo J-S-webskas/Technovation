@@ -23,7 +23,7 @@ android:background="@android:color/white">
             android:id="@+id/Tittle"
             android:layout_width="match_parent"
             android:layout_height="60dp"
-            android:background="@color/darkGreen"
+            android:background="@color/JGreen"
             android:paddingVertical="5dp"
             android:text="BioMS"
             android:textAlignment="center"
@@ -67,7 +67,7 @@ android:background="@android:color/white">
                 android:layout_height="165dp"
                 android:layout_marginTop="10dp"
                 android:elevation="200dp"
-                android:outlineAmbientShadowColor="@color/darkGreen"
+                android:outlineAmbientShadowColor="@color/JGreen"
                 app:cardCornerRadius="20dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -159,7 +159,7 @@ android:background="@android:color/white">
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/scrollView2"
-        android:background="@color/darkGreen">
+        android:background="@color/JGreen">
 
         <Button
             android:id="@+id/homeButton"
