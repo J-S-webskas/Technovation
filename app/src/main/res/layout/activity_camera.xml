@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity"
-    android:background="@android:color/white">
+    android:background="@android:color/white"
+    tools:context=".MainActivity">
 
 
     <com.google.android.material.appbar.AppBarLayout
@@ -56,12 +55,12 @@
             android:textSize="15sp"
             android:textStyle="bold"/>-->
 
-        <!--<ScrollView
+    <!--<ScrollView
         android:id="@+id/scrollView2"
         android:layout_width="match_parent"
         android:layout_height="150dp">-->
 
-        <!--</ScrollView>-->
+    <!--</ScrollView>-->
 
     <!--</androidx.cardview.widget.CardView>-->
 
@@ -69,12 +68,12 @@
         android:id="@+id/navLayout"
         android:layout_width="match_parent"
         android:layout_height="70dp"
+        android:background="@color/darkGreen"
         android:fitsSystemWindows="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
 
-        android:background="@color/darkGreen">
+        app:layout_constraintStart_toStartOf="parent">
 
         <Button
             android:id="@+id/homeButton"
@@ -111,56 +110,7 @@
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 
-    <androidx.cardview.widget.CardView
-        android:id="@+id/OG"
-        android:layout_width="402dp"
-        android:layout_height="120dp"
-        android:layout_marginLeft="3dp"
-        android:elevation="200dp"
-        app:cardCornerRadius="20dp"
-        app:cardElevation="20dp"
-        app:layout_constraintBottom_toTopOf="@+id/dualTest"
-        app:layout_constraintStart_toStartOf="parent"
-        android:layout_marginBottom="10dp">
-
-        <Button
-            android:id="@+id/recordOG"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="290dp"
-            android:layout_marginTop="10dp"
-            android:text="Record" />
-
-        <TextView
-            android:id="@+id/textView7"
-            android:layout_width="270dp"
-            android:layout_height="wrap_content"
-            android:layout_margin="15dp"
-            android:layout_marginLeft="10dp"
-            android:text="Walking Speed, Endurance, and Muscle Stiffness"
-            android:textSize="20sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/textView10"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="15dp"
-            android:layout_marginTop="65dp"
-            android:text="Video Path:" />
-
-        <TextView
-            android:id="@+id/videoPathOG"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="15dp"
-            android:layout_marginTop="90dp"
-            android:text="Video Path"
-            android:visibility="invisible" />
-
-    </androidx.cardview.widget.CardView>
-
-    <androidx.cardview.widget.CardView
+    <!--<androidx.cardview.widget.CardView
         android:id="@+id/dualTest"
         android:layout_width="402dp"
         android:layout_height="120dp"
@@ -187,7 +137,7 @@
             android:layout_margin="15dp"
             android:layout_marginLeft="10dp"
             android:text="Dual Test"
-            android:textSize="25sp"
+            android:textSize="15sp"
             android:textStyle="bold" />
 
         <TextView
@@ -236,7 +186,7 @@
             android:layout_margin="15dp"
             android:layout_marginLeft="10dp"
             android:text="Sensory Ataxia"
-            android:textSize="25sp"
+            android:textSize="15sp"
             android:textStyle="bold" />
 
         <TextView
@@ -256,7 +206,7 @@
             android:text="Video Path"
             android:visibility="invisible"/>
 
-    </androidx.cardview.widget.CardView>
+    </androidx.cardview.widget.CardView>-->
 
     <!--<androidx.cardview.widget.CardView
         android:id="@+id/dualTest"
@@ -353,18 +303,292 @@
             android:textStyle="bold" />
     </androidx.cardview.widget.CardView>-->
 
+    <!-- Walking Speed & Endurance-->
+
+    <!-- Muscle Stiffness-->
+
+    <!-- Balance / Posture-->
+
+    <!-- Dual Task-->
+
+    <!-- Sensory Ataxia-->
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/Speed"
+        android:layout_width="402dp"
+        android:layout_height="90dp"
+        android:layout_marginTop="68dp"
+        android:elevation="200dp"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="20dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/appBarLayout">
+
+        <Button
+            android:id="@+id/recordspeed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="290dp"
+            android:layout_marginTop="10dp"
+            android:text="Record" />
+
+        <TextView
+            android:id="@+id/textView7"
+            android:layout_width="270dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="15dp"
+            android:layout_marginLeft="10dp"
+            android:text="Walking Speed, and Endurance"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/textView10"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="15dp"
+            android:layout_marginTop="45dp"
+            android:text="Video Path:" />
+
+        <TextView
+            android:id="@+id/videoPathSpeed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="15dp"
+            android:layout_marginTop="65dp"
+            android:text="Video Path"
+            android:visibility="invisible" />
+
+    </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/stiffness"
+        android:layout_width="402dp"
+        android:layout_height="90dp"
+        android:layout_marginTop="72dp"
+        android:elevation="200dp"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="20dp"
+        app:layout_constraintBottom_toTopOf="@+id/balance"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/appBarLayout"
+        app:layout_constraintVertical_bias="0.834">
+
+        <Button
+            android:id="@+id/recordstiffness"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="290dp"
+            android:layout_marginTop="10dp"
+            android:text="Record" />
+
+        <TextView
+            android:id="@+id/textView8"
+            android:layout_width="270dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="15dp"
+            android:layout_marginLeft="10dp"
+            android:text="Muscle Stiffness"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/textView11"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="15dp"
+            android:layout_marginTop="45dp"
+            android:text="Video Path:" />
+
+        <TextView
+            android:id="@+id/videoPathStiffness"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="15dp"
+            android:layout_marginTop="65dp"
+            android:text="Video Path"
+            android:visibility="invisible" />
+
+    </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/balance"
+        android:layout_width="402dp"
+        android:layout_height="90dp"
+        android:layout_marginTop="72dp"
+        android:elevation="200dp"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="20dp"
+        app:layout_constraintBottom_toTopOf="@+id/dual"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/appBarLayout"
+        app:layout_constraintVertical_bias="0.923">
+
+        <Button
+            android:id="@+id/recordBalanceSide"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="150dp"
+            android:layout_marginTop="10dp"
+            android:text="Record Side"
+            android:textSize="12sp" />
+
+        <Button
+            android:id="@+id/recordBalanceFront"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="270dp"
+            android:layout_marginTop="10dp"
+            android:text="Record Front"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/textView9"
+            android:layout_width="140dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="15dp"
+            android:layout_marginLeft="10dp"
+            android:text="Balance / Posture"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/textView12"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="15dp"
+            android:layout_marginTop="45dp"
+            android:text="Video Path:" />
+
+        <TextView
+            android:id="@+id/videoPathBalance"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="15dp"
+            android:layout_marginTop="65dp"
+            android:text="Video Path"
+            android:visibility="invisible" />
+
+    </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/dual"
+        android:layout_width="402dp"
+        android:layout_height="90dp"
+        android:layout_marginTop="72dp"
+        android:elevation="200dp"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="20dp"
+        app:layout_constraintBottom_toTopOf="@+id/sensory"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/appBarLayout"
+        app:layout_constraintVertical_bias="0.945">
+
+        <Button
+            android:id="@+id/recorddual"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="290dp"
+            android:layout_marginTop="10dp"
+            android:text="Record" />
+
+        <TextView
+            android:id="@+id/textView13"
+            android:layout_width="270dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="15dp"
+            android:layout_marginLeft="10dp"
+            android:text="Dual Task Test"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/textView14"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="15dp"
+            android:layout_marginTop="45dp"
+            android:text="Video Path:" />
+
+        <TextView
+            android:id="@+id/videoPathDual"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="15dp"
+            android:layout_marginTop="65dp"
+            android:text="Video Path"
+            android:visibility="invisible" />
+
+    </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/sensory"
+        android:layout_width="402dp"
+        android:layout_height="90dp"
+        android:layout_marginTop="72dp"
+        android:elevation="200dp"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="20dp"
+        app:layout_constraintBottom_toTopOf="@+id/navLayout"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/appBarLayout"
+        app:layout_constraintVertical_bias="0.979">
+
+        <Button
+            android:id="@+id/recordsensory"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="290dp"
+            android:layout_marginTop="10dp"
+            android:text="Record" />
+
+        <TextView
+            android:id="@+id/textView15"
+            android:layout_width="270dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="15dp"
+            android:layout_marginLeft="10dp"
+            android:text="Sencory Axtia"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/textView16"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="15dp"
+            android:layout_marginTop="45dp"
+            android:text="Video Path:" />
+
+        <TextView
+            android:id="@+id/videoPathSensory"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="15dp"
+            android:layout_marginTop="65dp"
+            android:text="Video Path"
+            android:visibility="invisible" />
+
+    </androidx.cardview.widget.CardView>
+
     <Button
         android:id="@+id/how"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
         android:text="See How to Record Symptoms"
+        android:textSize="10sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.049"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/appBarLayout" />
 
-    <androidx.cardview.widget.CardView
+    <!--<androidx.cardview.widget.CardView
         android:id="@+id/endurance"
         android:layout_width="402dp"
         android:layout_height="120dp"
@@ -391,7 +615,7 @@
             android:layout_margin="15dp"
             android:layout_marginLeft="10dp"
             android:text="Endurance Test"
-            android:textSize="25sp"
+            android:textSize="15sp"
             android:textStyle="bold" />
 
         <TextView
@@ -411,7 +635,7 @@
             android:text="Video Path"
             android:visibility="invisible" />
 
-    </androidx.cardview.widget.CardView>
+    </androidx.cardview.widget.CardView>-->
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#242632"
+    tools:context=".MainActivity">
+    <!--@android:color/white-->
+
+
+    <!--<com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:fitsSystemWindows="true"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/Tittle"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:background="@color/JGreen"
+            android:paddingVertical="5dp"
+            android:text="Record Session"
+            android:textAlignment="center"
+            android:textColor="@color/white"
+            android:textSize="32sp"
+            android:textStyle="bold" />
+
+    </com.google.android.material.appbar.AppBarLayout>--> <!--Top Bar-->
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/toolbar"
+        app:titleTextAppearance="@style/TittleSize"
+        app:title="Speed and Distance Travelled"
+        app:titleCentered="true"
+        app:titleTextColor="#fff"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:id="@+id/localityTV"
+        android:layout_marginTop="10sp"
+        android:text="City"
+        android:textSize="20sp"
+        android:textColor="#fff"
+        android:textStyle="bold"
+        android:layout_below="@+id/toolbar"/>
+
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="200sp"
+        android:layout_below="@+id/localityTV"
+        android:id="@+id/card"
+        android:layout_marginStart="20sp"
+        android:layout_marginEnd="20sp"
+        android:layout_marginTop="70sp"
+        android:elevation="100sp"
+        style="@style/Widget.Material3.CardView.Filled"
+        app:cardBackgroundColor="#242632"
+        android:layout_centerHorizontal="true">
+
+        <com.github.anastr.speedviewlib.PointerSpeedometer
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="8sp"
+            android:id="@+id/speedometer"
+            app:sv_speedTextColor="#3344A8"
+            app:sv_unitTextColor="#3344A8"
+            app:sv_textSize="12sp"
+            app:sv_markWidth="3sp"
+            app:sv_speedometerWidth="14sp"
+            app:sv_speedTextSize="28sp"
+            app:sv_backgroundCircleColor="#242632"/>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/speedTV"
+        android:textColor="#fff"
+        android:text="Speed: 0.0 km/h"
+        android:layout_centerHorizontal="true"
+        android:textSize="30sp"
+        android:textStyle="bold"
+        android:layout_below="@+id/card"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/speedTV"
+        android:orientation="horizontal">
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="0sp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            style="@style/Widget.Material3.CardView.Filled"
+            app:cardBackgroundColor="#2D2F3C"
+            android:layout_marginStart="20sp"
+            android:layout_marginEnd="10sp"
+            android:layout_marginTop="20sp"
+            android:layout_marginBottom="20sp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="10sp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textStyle="bold"
+                    android:textColor="#fff"
+                    android:gravity="center_horizontal"
+                    android:textSize="14sp"
+                    android:text="Distance"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textStyle="bold"
+                    android:textSize="28sp"
+                    android:id="@+id/distanceTV"
+                    android:textColor="#3344A8"
+                    android:gravity="center_horizontal"
+                    android:text="0"/>
+
+                <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:textColor="#3344A8"
+                android:gravity="center_horizontal"
+                android:text="km/h"/>
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="0sp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            style="@style/Widget.Material3.CardView.Filled"
+            app:cardBackgroundColor="#2D2F3C"
+            android:layout_marginStart="20sp"
+            android:layout_marginEnd="10sp"
+            android:layout_marginTop="20sp"
+            android:layout_marginBottom="20sp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="10sp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textStyle="bold"
+                    android:textColor="#fff"
+                    android:gravity="center_horizontal"
+                    android:text="Avg Speed"
+                    android:textSize="14sp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textStyle="bold"
+                    android:textSize="28sp"
+                    android:id="@+id/avgSpeedTV"
+                    android:textColor="#3344A8"
+                    android:gravity="center_horizontal"
+                    android:text="0"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="12sp"
+                    android:textColor="#3344A8"
+                    android:gravity="center_horizontal"
+                    android:text="km/h"/>
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="0sp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            style="@style/Widget.Material3.CardView.Filled"
+            app:cardBackgroundColor="#2D2F3C"
+            android:layout_marginStart="20sp"
+            android:layout_marginEnd="10sp"
+            android:layout_marginTop="20sp"
+            android:layout_marginBottom="20sp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="10sp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textStyle="bold"
+                    android:textColor="#fff"
+                    android:gravity="center_horizontal"
+                    android:textSize="14sp"
+                    android:text="Max Speed"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textStyle="bold"
+                    android:textSize="28sp"
+                    android:textColor="#3344A8"
+                    android:id="@+id/maxSpeedTV"
+                    android:gravity="center_horizontal"
+                    android:text="0"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="12sp"
+                    android:textColor="#3344A8"
+                    android:gravity="center_horizontal"
+                    android:text="km/h"/>
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+
+    </LinearLayout>
+
+    <!--<androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/navLayout"
+        android:layout_width="match_parent"
+        android:layout_height="70dp"
+        android:background="@color/darkGreen"
+        android:fitsSystemWindows="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+
+        app:layout_constraintStart_toStartOf="parent">
+
+        <Button
+            android:id="@+id/homeButton"
+            android:layout_width="100dp"
+            android:layout_height="match_parent"
+            android:text="Home"
+            app:cornerRadius="0dp"
+            app:layout_constraintEnd_toStartOf="@+id/graphButton" />
+
+        <Button
+            android:id="@+id/graphButton"
+            android:layout_width="100dp"
+            android:layout_height="match_parent"
+            android:text="Graphs"
+            app:cornerRadius="0dp"
+            app:layout_constraintEnd_toStartOf="@+id/reportButton" />
+
+        <Button
+            android:id="@+id/reportButton"
+            android:layout_width="100dp"
+            android:layout_height="match_parent"
+            android:text="Reports"
+            app:cornerRadius="0dp"
+            app:layout_constraintEnd_toStartOf="@+id/sessionButton" />
+
+        <Button
+            android:id="@+id/sessionButton"
+            android:layout_width="106dp"
+            android:layout_height="match_parent"
+            android:text="Sessions"
+            app:cornerRadius="0dp"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>--> <!--Navigation-->
+
+
+</RelativeLayout>
