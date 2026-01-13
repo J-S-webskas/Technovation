@@ -76,7 +76,7 @@
                     android:id="@+id/textView"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Walking Speed, Endurance and Muscle Stiffness"
+                    android:text="Walking Speed, and Endurance"
                     android:layout_marginLeft="10dp"
                     android:textStyle="bold"
                     android:layout_marginTop="10dp"/>
@@ -86,7 +86,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="10dp"
-                    android:layout_marginTop="160dp"
+                    android:layout_marginTop="215dp"
                     android:text="Dual Task Test"
                     android:textStyle="bold" />
 
@@ -95,7 +95,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="10dp"
-                    android:layout_marginTop="240dp"
+                    android:layout_marginTop="295dp"
                     android:text="Sensory Ataxia Test"
                     android:textStyle="bold" />
 
@@ -104,7 +104,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="10dp"
-                    android:layout_marginTop="85dp"
+                    android:layout_marginTop="140dp"
                     android:text="Balance / Posture"
                     android:textStyle="bold" />
 
@@ -112,7 +112,7 @@
                     android:id="@+id/textView15"
                     android:layout_width="320dp"
                     android:layout_height="wrap_content"
-                    android:text="Film yourself walking for as long as you possible can without any breaks longer than 5 - 10 seconds."
+                    android:text="Press the record button and walk for as long as you can."
                     android:layout_marginTop="35dp"
                     android:layout_marginLeft="10dp"/>
 
@@ -121,7 +121,7 @@
                     android:layout_width="320dp"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="10dp"
-                    android:layout_marginTop="105dp"
+                    android:layout_marginTop="160dp"
                     android:text="Film two videos of yourself standing. One from the front, the other from the back." />
 
                 <TextView
@@ -129,7 +129,7 @@
                     android:layout_width="320dp"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="10dp"
-                    android:layout_marginTop="185dp"
+                    android:layout_marginTop="240dp"
                     android:text="While counting backwards from 30, walk in a straight line." />
 
                 <TextView
@@ -137,8 +137,25 @@
                     android:layout_width="320dp"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="10dp"
-                    android:layout_marginTop="265dp"
+                    android:layout_marginTop="320dp"
                     android:text="Film a 15 - 20 second video of yourself walking with your eyes closed." />
+
+                <TextView
+                    android:id="@+id/textView22"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Muscle Stiffness"
+                    android:textStyle="bold"
+                    android:layout_marginTop="80dp"
+                    android:layout_marginLeft="10dp"/>
+
+                <TextView
+                    android:id="@+id/textView23"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Film a 15 - 20 second video of yorself walking."
+                    android:layout_marginTop="100dp"
+                    android:layout_marginLeft="10dp"/>
             </androidx.cardview.widget.CardView>
 
         </androidx.constraintlayout.widget.ConstraintLayout>

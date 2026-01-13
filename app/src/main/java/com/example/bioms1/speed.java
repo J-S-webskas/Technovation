@@ -42,6 +42,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+// Java File for distance & speed calculations
+
 public class speed extends AppCompatActivity implements LocationListener {
 
     private TextView localityTV, speedTV, averageSpeedTV, maxSpeedTV, distanceTV;

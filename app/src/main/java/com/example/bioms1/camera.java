@@ -15,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -29,15 +30,36 @@ import java.net.URI;
 
 public class camera extends AppCompatActivity {
 
+    /*
     private static int CAMERA_PERMISSION_CODE = 100;
     private static int VIDEO_RECORD_CODE = 101;
     private Uri videoPath;
+
+    private Button how, recordspeed, recordstiffness, recordBalanceSide, recordBalanceFront, recorddual, recordsensory;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_camera);
+
+        initWidgets();
+
+        how.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(camera.this, demoSession.class);
+                startActivity(intent);
+            }
+        });
+
+        recordspeed.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(camera.this, demoSession.class);
+                startActivity(intent);
+            }
+        });
 
         if (isCameraPresentinPhone()) {
             Log.i("Video_record_tag", "Camera Detected");
@@ -46,6 +68,17 @@ public class camera extends AppCompatActivity {
         else {
             Log.i("Video_record_tag", "No Camera Detected");
         }
+    }
+
+    private void initWidgets() {
+        how = findViewById(R.id.how);
+        recordspeed = findViewById(R.id.recordspeed);
+        recordstiffness = findViewById(R.id.recordstiffness);
+        recordBalanceSide = findViewById(R.id.recordBalanceSide);
+        recordBalanceFront = findViewById(R.id.recordBalanceFront);
+        recorddual = findViewById(R.id.recorddual);
+        recordsensory = findViewById(R.id.recordsensory);
+
     }
 
     private boolean isCameraPresentinPhone() {
@@ -92,5 +125,5 @@ public class camera extends AppCompatActivity {
             Log.i("VIDEO_RECORD_TAG", "Video recording has run into an error");
         }
     }
-
+*/
 }
