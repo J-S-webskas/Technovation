@@ -33,7 +33,7 @@ android {
         viewBinding = true
     }
 }
-
+//Commit note
 dependencies {
 
     implementation(libs.appcompat)

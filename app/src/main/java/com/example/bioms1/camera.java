@@ -30,7 +30,6 @@ import java.net.URI;
 
 public class camera extends AppCompatActivity {
 
-    /*
     private static int CAMERA_PERMISSION_CODE = 100;
     private static int VIDEO_RECORD_CODE = 101;
     private Uri videoPath;
@@ -125,5 +124,5 @@ public class camera extends AppCompatActivity {
             Log.i("VIDEO_RECORD_TAG", "Video recording has run into an error");
         }
     }
-*/
+
 }
