@@ -10,4 +10,10 @@
         <item name="android:textSize">14sp</item>
         <item name="textAllCaps">true</item>
     </style>
+
+    <style name="Tittle">textsize</style>
+
+    <style name="TittleSize">
+        <item name = "android:textSize">28sp</item>
+    </style>
 </resources>

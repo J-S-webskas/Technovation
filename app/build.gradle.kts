@@ -79,4 +79,6 @@ dependencies {
     implementation(libs.camera.core)
     implementation(libs.camera.camera2)
     implementation(libs.camera.lifecycle)
+
+    implementation("com.github.anastr:speedviewlib:1.6.11")
 }

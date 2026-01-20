@@ -48,6 +48,11 @@ public class RecordFragment extends Fragment {
     private ExecutorService cameraExecutor;
     private PoseLandmarker poseLandmarker;
 
+    // Data Storage
+    private AssessmentData currentAssessment;
+    private String currentTestType = "none"; // "baseline", "dual", "sensory"
+    private long testStartTime;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_record, container, false);
@@ -75,12 +80,15 @@ public class RecordFragment extends Fragment {
             ActivityCompat.requestPermissions(
                     requireActivity(),
                     new String[]{Manifest.permission.CAMERA},
-                    101  // Any number you want
+                    PERMISSION_REQUEST_CAMERA
             );
         }
 
         // Initialize MediaPipe
         setupPoseDetector();
+
+        // Initialize new assessment
+        currentAssessment = new AssessmentData("patient_001");
 
         analyzeButton.setOnClickListener(v -> toggleAnalysis());
         return view;
@@ -199,7 +207,7 @@ public class RecordFragment extends Fragment {
         PointF bosEnd = new PointF(rightHeel.x(), rightHeel.y());
 
         // 3. Calculate Joint Angles for Stiffness Analysis (Hip, Knee, Ankle)
-        // Use your Python logic with landmarks 23, 25, 27 for left leg, etc.
+        // Use = Python logic with landmarks 23, 25, 27 for left leg, etc.
 
         // --- UPDATE THE OVERLAY VIEW ON THE UI THREAD ---
         requireActivity().runOnUiThread(() -> {
