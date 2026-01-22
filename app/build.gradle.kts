@@ -34,7 +34,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
-    packaging {
+    packagingOptions {
         resources {
             excludes += listOf(
                 "**/kotlin/**",
@@ -45,12 +45,19 @@ android {
                 "META-INF/NOTICE",
                 "META-INF/NOTICE.txt"
             )
+        }
 
-            pickFirsts += listOf(
-                "lib/**/libc++_shared.so",
-                "lib/**/libmediapipe_tasks_vision_jni.so",
-                "lib/**/libmediapipe_jni.so"
-            )
+        // This is the most important fix - pickFirst for MediaPipe libraries
+        pickFirsts += listOf(
+            "lib/**/libc++_shared.so",
+            "lib/**/libmediapipe_tasks_vision_jni.so",
+            "lib/**/libmediapipe_tasks_jni.so",
+            "lib/**/libmediapipe_jni.so",
+            "lib/**/libtensorflowlite_jni.so",
+            "lib/**/liblitert_jni.so"
+        )
+        jniLibs {
+            useLegacyPackaging = true
         }
     }
 }
@@ -66,10 +73,10 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
 
     // MediaPipe from TOML
-//    implementation(libs.mediapipe.tasks.vision)
-//    implementation(libs.mediapipe.tasks.core)
-    implementation("com.google.mediapipe:tasks-vision:0.10.11")
-    implementation("com.google.mediapipe:tasks-core:0.10.13")
+    implementation(libs.mediapipe.tasks.vision)
+    implementation(libs.mediapipe.tasks.core)
+//    implementation("com.google.mediapipe:tasks-vision:0.10.11")
+//    implementation("com.google.mediapipe:tasks-core:0.10.13")
     implementation("com.google.ai.edge.litert:litert-api:1.4.1")
 
     // MPAndroidChart from TOML
@@ -80,5 +87,8 @@ dependencies {
     implementation(libs.camera.camera2)
     implementation(libs.camera.lifecycle)
 
-    implementation("com.github.anastr:speedviewlib:1.6.11")
+    implementation("com.github.anastr:speedviewlib:1.6.1")
+
+    implementation("androidx.navigation:navigation-fragment-ktx:2.6.0")
+    implementation("androidx.navigation:navigation-ui-ktx:2.6.0")
 }

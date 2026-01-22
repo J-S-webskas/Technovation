@@ -3,7 +3,6 @@ package com.example.myappication;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.view.View;
-import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -17,6 +16,7 @@ import com.github.mikephil.charting.data.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class ChartCardViewHolder extends RecyclerView.ViewHolder {
 
@@ -44,13 +44,15 @@ public class ChartCardViewHolder extends RecyclerView.ViewHolder {
         lineChart.setPinchZoom(true);
     }
 
-    public void bind(PelvicSwayChart chart, String timeRange, PelvicSwayAdapter.OnCardClickListener listener) {
+    public void bind(BiomechanicalChart chart, String timeRange, BiomechanicalAdapter.OnCardClickListener listener) {
         // Set basic text
         chartTitle.setText(chart.getTitle());
         chartDate.setText(chart.getFormattedLatestDate());
+        conditionIndicator.setText(chart.getCondition());
 
         // Get data filtered for the selected time range
         List<Entry> chartData = chart.getDataForTimeRange(timeRange);
+//        Map<String, List<Entry>> chartData = chart.getAllDataSeries(timeRange);
 
         // Convert List<Entry> to List<Float> for chart setup. Setup chart with filtered data
         List<Float> floatData = new ArrayList<>();
@@ -59,7 +61,7 @@ public class ChartCardViewHolder extends RecyclerView.ViewHolder {
         }
 
         // Setup chart with the filtered data
-        setupGradientAreaChart(lineChart, floatData, chart.getCondition(), timeRange);
+        setupMultipleGradientAreaChart(lineChart, floatData, chart.getCondition(), timeRange);
 
         // Update stats based on filtered data
         updateStats(floatData, chart.getCondition());
@@ -107,8 +109,8 @@ public class ChartCardViewHolder extends RecyclerView.ViewHolder {
         averageValue.setText(String.format("Avg: %.1f mm", avg));
         maxValue.setText(String.format("Max: %.1f mm", max));
     }
-    private void setupGradientAreaChart(LineChart chart, List<Float> swayData,
-                                        String condition, String timeRange) {
+    private void setupMultipleGradientAreaChart(LineChart chart, List<Float> swayData,
+                                                String condition, String timeRange) {
         // Clear any existing data
         chart.clear();
 
@@ -186,21 +188,17 @@ public class ChartCardViewHolder extends RecyclerView.ViewHolder {
     private void setConditionIndicator(TextView indicator, String condition) {
         switch (condition.toLowerCase()) {
             case "normal":
-                indicator.setText("NORMAL");
                 indicator.setBackgroundResource(R.drawable.bg_normal_indicator);
-                indicator.setTextColor(Color.WHITE);
                 break;
             case "elevated":
-                indicator.setText("ELEVATED");
                 indicator.setBackgroundResource(R.drawable.bg_elevated_indicator);
-                indicator.setTextColor(Color.WHITE);
                 break;
             case "critical":
-                indicator.setText("CRITICAL");
                 indicator.setBackgroundResource(R.drawable.bg_critical_indicator);
-                indicator.setTextColor(Color.WHITE);
                 break;
         }
+        indicator.setText(condition.toUpperCase());
+        indicator.setTextColor(Color.WHITE);
     }
     private int getConditionColor(String condition) {
         switch (condition.toLowerCase()) {

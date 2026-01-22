@@ -16,11 +16,11 @@ public class BiomechanicalDataGenerator {
         return metrics;
     }
 
-//    private static PelvicSwayChart generatePelvicSway() {
+//    private static EnduranceChart generatePelvicSway() {
 //        Map<Date, Float> data = generateTrendData(
 //                5, 25, 0.03f, 6, 30, 15, 25, true
 //        );
-//        return new PelvicSwayChart(1, data, determineCondition(data, 15, 25, true));
+//        return new EnduranceChart(1, data, determineCondition(data, 15, 25, true));
 //    }
 
 //    private static PosturalStabilityChart generatePosturalStability() {

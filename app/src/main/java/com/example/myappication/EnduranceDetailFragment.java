@@ -1,13 +1,11 @@
 package com.example.myappication;
 
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+
 import androidx.fragment.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -18,7 +16,7 @@ import com.github.mikephil.charting.data.Entry;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PelvicSwayDetailFragment extends Fragment {
+public class EnduranceDetailFragment extends Fragment {
 
     // UI Components
     private TextView chartTitleTextView;
@@ -29,7 +27,7 @@ public class PelvicSwayDetailFragment extends Fragment {
     private String timeRange;
     private int position;
 
-    public PelvicSwayDetailFragment() {
+    public EnduranceDetailFragment() {
         // Required empty public constructor
     }
 
@@ -37,7 +35,7 @@ public class PelvicSwayDetailFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout
-        View view = inflater.inflate(R.layout.fragment_pelvic_sway_detail, container, false);
+        View view = inflater.inflate(R.layout.fragment_endurance_detail, container, false);
 
         // Initialize UI components
         initializeViews(view);
@@ -64,7 +62,7 @@ public class PelvicSwayDetailFragment extends Fragment {
     private void getDataFromBundle() {
         Bundle args = getArguments();
         if (args != null) {
-            chartTitle = args.getString("chart_title", "Pelvic Sway");
+            chartTitle = args.getString("chart_title", "Endurance");
             timeRange = args.getString("time_range", "Last 30 days");
             position = args.getInt("position", 0);
 
@@ -74,7 +72,7 @@ public class PelvicSwayDetailFragment extends Fragment {
                     Toast.LENGTH_SHORT).show();
         } else {
             // Default values if no Bundle
-            chartTitle = "Pelvic Sway Analysis";
+            chartTitle = "Endurance Analysis";
             timeRange = "Last 30 days";
             position = 0;
         }
@@ -107,14 +105,14 @@ public class PelvicSwayDetailFragment extends Fragment {
         areaChart.setDrawGridBackground(false);
         areaChart.setPinchZoom(true);
 
-        // Create sample data for Pelvic Sway chart
+        // Create sample data for Endurance chart
         List<Entry> entries = new ArrayList<>();
         for (int i = 0; i < 20; i++) {
             float value = (float) (Math.sin(i * 0.5) * 10 + 20 + Math.random() * 5);
             entries.add(new Entry(i, value));
         }
 
-        LineDataSet dataSet = new LineDataSet(entries, "Pelvic Sway (degrees)");
+        LineDataSet dataSet = new LineDataSet(entries, "Endurance (sec)");
         dataSet.setColor(0xFF1ec688); // Green color matching your theme
         dataSet.setLineWidth(2f);
         dataSet.setCircleColor(0xFF1ec688);
@@ -130,15 +128,14 @@ public class PelvicSwayDetailFragment extends Fragment {
 
     private String createDescriptionForChart(String chartTitle) {
         // Customize description based on chart type
-        if (chartTitle.contains("Pelvic") || chartTitle.contains("Sway")) {
-            return "📊 **Pelvic Sway Analysis**\n\n" +
-                    "This chart displays pelvic sway measurements over time. Pelvic sway refers to the side-to-side movement of the pelvis during standing or walking.\n\n" +
+        if (chartTitle.contains("Endurace")) {
+            return "📊 **Endurace Analysis**\n\n" +
+                    "This chart displays Endurance measurements over time..\n\n" +
                     "🔍 **Key Observations:**\n" +
                     "• **Average Sway:** 2.5°\n" +
                     "• **Maximum Sway:** 4.8°\n" +
                     "• **Stability Index:** 0.85 (Good)\n\n" +
                     "💡 **Clinical Significance:**\n" +
-                    "Reduced pelvic sway can indicate improved core stability and balance control. The gradient visualization helps identify:\n" +
                     "1. Balance improvement trends\n" +
                     "2. Core muscle engagement patterns\n" +
                     "3. Rehabilitation progress\n" +

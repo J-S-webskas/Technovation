@@ -9,10 +9,10 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 
-import com.github.anastr.speedviewlib.PointerSpeedometer;
+//import com.github.anastr.speedviewlib.PointerSpeedometer;
 import com.google.android.material.snackbar.Snackbar;
 
-import androidx.activity.EdgeToEdge;
+//import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -30,12 +30,12 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
-import androidx.navigation.ui.AppBarConfiguration;
-import androidx.navigation.ui.NavigationUI;
-
-import com.example.myappication.databinding.ActivitySpeedBinding;
+//import androidx.navigation.NavController;
+//import androidx.navigation.Navigation;
+//import androidx.navigation.ui.AppBarConfiguration;
+//import androidx.navigation.ui.NavigationUI;
+//
+//import com.example.myappication.databinding.ActivitySpeedBinding;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -50,7 +50,7 @@ public class Speed extends AppCompatActivity implements LocationListener {
     private LocationManager locationManager;
     private final Handler handler = new Handler();
     private Runnable resetSpeedRunnable;
-    private PointerSpeedometer pointerSpeedometer;
+//    private PointerSpeedometer pointerSpeedometer;
     private float maxSpeed = 0.0f;
     private float totalDistance = 0.0f;
     private Location previousLocation;
@@ -67,7 +67,7 @@ public class Speed extends AppCompatActivity implements LocationListener {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate((savedInstanceState));
-        EdgeToEdge.enable(this);
+//        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_speed);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -81,29 +81,29 @@ public class Speed extends AppCompatActivity implements LocationListener {
         maxSpeedTV = findViewById(R.id.maxSpeedTV);
         distanceTV = findViewById(R.id.distanceTV);
 
-        pointerSpeedometer = findViewById(R.id.speedometer);
-        pointerSpeedometer.setMaxSpeed(200);
+//        pointerSpeedometer = findViewById(R.id.speedometer);
+//        pointerSpeedometer.setMaxSpeed(200);
 
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
-        if (ContextCompat.checkSelfPermission(speed.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            activityResultLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION);
-        } else {
-            startLocationUpdates();
-        }
+//        if (ContextCompat.checkSelfPermission(speed.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+//            activityResultLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION);
+//        } else {
+//            startLocationUpdates();
+//        }
 
         resetSpeedRunnable = () -> {
             speedTV.setText((String.format(Locale.getDefault(), "Speed: %.2f km/h", 0.0f)));
-            pointerSpeedometer.speedTo(0);
+//            pointerSpeedometer.speedTo(0);
         };
     }
 
     private void startLocationUpdates() {
         try {
-            if (ContextCompat.checkSelfPermission(speed.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                return;
-            }
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000, 1, this);
+//            if (ContextCompat.checkSelfPermission(speed.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+//                return;
+//            }
+//            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000, 1, this);
         } catch (Exception e) {
             Toast.makeText(this, "There was an error while listening for location updates", Toast.LENGTH_SHORT).show();
             e.printStackTrace();
@@ -137,7 +137,7 @@ public class Speed extends AppCompatActivity implements LocationListener {
 
         float speed = location.getSpeed() * 3.6f; // km/h
         speedList.add(speed);
-        pointerSpeedometer.speedTo(speed);
+//        pointerSpeedometer.speedTo(speed);
 
         if (speed > maxSpeed) {
             maxSpeed = speed;

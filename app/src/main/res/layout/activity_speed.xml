@@ -45,18 +45,18 @@
         app:cardBackgroundColor="#242632"
         android:layout_centerHorizontal="true">
 
-        <com.github.anastr.speedviewlib.PointerSpeedometer
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="8sp"
-            android:id="@+id/speedometer"
-            app:sv_speedTextColor="#3344A8"
-            app:sv_unitTextColor="#3344A8"
-            app:sv_textSize="12sp"
-            app:sv_markWidth="3sp"
-            app:sv_speedometerWidth="14sp"
-            app:sv_speedTextSize="28sp"
-            app:sv_backgroundCircleColor="#242632"/>
+<!--        <com.github.anastr.speedviewlib.PointerSpeedometer-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_margin="8sp"-->
+<!--            android:id="@+id/speedometer"-->
+<!--            app:sv_speedTextColor="#3344A8"-->
+<!--            app:sv_unitTextColor="#3344A8"-->
+<!--            app:sv_textSize="12sp"-->
+<!--            app:sv_markWidth="3sp"-->
+<!--            app:sv_speedometerWidth="14sp"-->
+<!--            app:sv_speedTextSize="28sp"-->
+<!--            app:sv_backgroundCircleColor="#242632"/>-->
 
     </com.google.android.material.card.MaterialCardView>
 
