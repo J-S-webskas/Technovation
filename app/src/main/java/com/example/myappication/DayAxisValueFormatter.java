@@ -1,14 +1,16 @@
+// Update DayAxisValueFormatter to skip labels for gaps
 package com.example.myappication;
 
 import com.github.mikephil.charting.components.AxisBase;
-
 import com.github.mikephil.charting.formatter.ValueFormatter;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
 public class DayAxisValueFormatter extends ValueFormatter {
     private final SimpleDateFormat dateFormat;
+    private final Calendar calendar = Calendar.getInstance();
     private final Date currentDate = new Date();
 
     public DayAxisValueFormatter() {
@@ -17,14 +19,16 @@ public class DayAxisValueFormatter extends ValueFormatter {
 
     @Override
     public String getFormattedValue(float value) {
+        // If value is NaN or invalid, return empty string
+        if (Float.isNaN(value)) return "";
+
         // value represents days offset from current date
         int daysAgo = (int) value;
-
-        // Calculate the date for this data point
-        Date pointDate = new Date(currentDate.getTime() - (daysAgo * 24 * 60 * 60 * 1000L));
+        calendar.setTime(currentDate);  // Reset to today
+        calendar.add(Calendar.DAY_OF_YEAR, -daysAgo);  // Subtract days
 
         // For day view, show date like "Dec 24"
-        return dateFormat.format(pointDate);
+        return dateFormat.format(calendar.getTime());
     }
 
     @Override

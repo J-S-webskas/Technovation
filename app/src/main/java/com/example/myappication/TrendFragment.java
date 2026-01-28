@@ -8,23 +8,21 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
+
 import com.google.android.material.button.MaterialButtonToggleGroup;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
+import java.util.TreeMap;
 
 public class TrendFragment extends Fragment {
 
     private RecyclerView recyclerView;
     private MaterialButtonToggleGroup toggleGroup;
     private BiomechanicalAdapter adapter;
-    private String currentTimeRange = "1month"; // Default make sure it's popping red
-
+    private String currentTimeRange = "1month";
 
     public TrendFragment() {
         // Required empty public constructor
@@ -43,12 +41,8 @@ public class TrendFragment extends Fragment {
         // Uses requireContext() instead of this (Fragments need context from parent Activity)
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        // Create ONE Pelvic Sway chart with ALL historical data
-        List<BiomechanicalChart> charts = new ArrayList<>();
-        charts.add(createEnduranceChart());
-        charts.add(createBalanceChart());
-        charts.add(createSpasticityChart());
-        charts.add(createWalkingSpeedeChart());
+        // Load REAL data charts from storage
+        List<BiomechanicalChart> charts = loadRealDataCharts();
 
         // Connects adapter to recyclerView
         adapter = new BiomechanicalAdapter(charts, currentTimeRange, getContext());
@@ -59,16 +53,12 @@ public class TrendFragment extends Fragment {
             if (isChecked) {
                 if (checkedId == R.id.oneMonth) {
                     currentTimeRange = "1month";
-                    Toast.makeText(requireContext(), "Showing 1-month trend", Toast.LENGTH_SHORT).show();
                 } else if (checkedId == R.id.sixMonth) {
                     currentTimeRange = "6month";
-                    Toast.makeText(requireContext(), "Showing 6-month trend", Toast.LENGTH_SHORT).show();
                 } else if (checkedId == R.id.oneYear) {
                     currentTimeRange = "1year";
-                    Toast.makeText(requireContext(), "Showing 1-year trend", Toast.LENGTH_SHORT).show();
                 } else if (checkedId == R.id.MAX) {
                     currentTimeRange = "max";
-                    Toast.makeText(requireContext(), "Showing full history", Toast.LENGTH_SHORT).show();
                 }
 
                 // Update adapter with new time range
@@ -76,96 +66,314 @@ public class TrendFragment extends Fragment {
                 adapter.notifyDataSetChanged();
             }
         });
-
         return view;
     }
 
-    private EnduranceChart createEnduranceChart() {
-        // Create map of historical data (Date -> Value)
-        Map<Date, Float> historicalData = new HashMap<>();
-        Calendar cal = Calendar.getInstance();
-        Random rand = new Random();
+    private List<BiomechanicalChart> loadRealDataCharts() {
+        List<BiomechanicalChart> charts = new ArrayList<>();
 
-        // Generate 2 years of stimulated daily data
-        for (int i = 0; i < 730; i++) { // 730 days = ~2 years
-            cal.setTime(new Date());
-            cal.add(Calendar.DAY_OF_YEAR, -i);
-            Date date = cal.getTime();
+        // Try to load assessments from storage
+        List<AssessmentData> assessments = DataStorageManager.loadAllAssessments(requireContext());
 
-            // Simulate pelvic sway values with some trend
-            float baseValue = 5 + (i / 100f); // Slowly increasing trend
-            float randomVariation = rand.nextFloat() * 3;
-            float value = baseValue + randomVariation;
-
-            historicalData.put(date, value);
+        if (assessments == null || assessments.isEmpty()) {
+            // NO DATA - Create empty charts
+            charts.add(createEmptyBalanceChart());
+            charts.add(createEmptySpasticityChart());
+            charts.add(createEmptyEnduranceChart());
+            charts.add(createEmptyWalkingSpeedChart());
+        } else {
+            // HAS DATA - Create charts from real data
+            charts.add(createBalanceChartFromData(assessments));
+            charts.add(createSpasticityChartFromData(assessments));
+            charts.add(createEnduranceChartFromData(assessments));
+            charts.add(createWalkingSpeedChartFromData(assessments));
         }
 
-        return new EnduranceChart(1, "Endurance", historicalData, "Elevated");
+        return charts;
     }
-    private JointSpasticityChart createSpasticityChart() {
-        // Create map of historical data (Date -> Value)
-        Map<Date, Float> historicalData = new HashMap<>();
-        Calendar cal = Calendar.getInstance();
-        Random rand = new Random();
 
-        // Generate 2 years of stimulated daily data
-        for (int i = 0; i < 730; i++) { // 730 days = ~2 years
-            cal.setTime(new Date());
-            cal.add(Calendar.DAY_OF_YEAR, -i);
-            Date date = cal.getTime();
+    // EMPTY CHARTS (when no data exists)
+    private BalanceChart createEmptyBalanceChart() {
+        Map<Date, Float> emptyData = new HashMap<>();
+        BalanceChart chart = new BalanceChart(1, "Balance", emptyData);
+        return chart;
+    }
 
-            // Simulate pelvic sway values with some trend
-            float baseValue = 5 + (i / 100f); // Slowly increasing trend
-            float randomVariation = rand.nextFloat() * 3;
-            float value = baseValue + randomVariation;
+    private MuscleStiffnessChart createEmptySpasticityChart() {
+        Map<Date, Float> emptyData = new HashMap<>();
+        MuscleStiffnessChart chart = new MuscleStiffnessChart(2, "Spasticity", emptyData, "No Data");
+        return chart;
+    }
 
-            historicalData.put(date, value);
+    private EnduranceChart createEmptyEnduranceChart() {
+        Map<Date, Float> emptyData = new HashMap<>();
+        EnduranceChart chart = new EnduranceChart(3, "Endurance", emptyData, "No Data");
+        return chart;
+    }
+
+    private WalkingSpeedChart createEmptyWalkingSpeedChart() {
+        Map<Date, Float> emptyData = new HashMap<>();
+        WalkingSpeedChart chart = new WalkingSpeedChart(4, "Walking Speed", emptyData, "No Data");
+        return chart;
+    }
+
+    // REAL DATA CHARTS
+    private BalanceChart createBalanceChartFromData(List<AssessmentData> assessments) {
+        // Extract data from all three test types
+        Map<Date, Float> baselineData = new TreeMap<>(); // TreeMap keeps dates sorted
+        Map<Date, Float> dualTaskData = new TreeMap<>();
+        Map<Date, Float> sensoryAtaxiaData = new TreeMap<>();
+
+        for (AssessmentData assessment : assessments) {
+            Date date = assessment.getTimestamp();
+
+            // BASELINE data
+            if (assessment.getBaseline() != null && assessment.getBaseline().getBalanceScore() > 0) {
+                baselineData.put(date, assessment.getBaseline().getBalanceScore());
+            }
+
+            // DUAL TASK data
+            if (assessment.getDualTask() != null && assessment.getDualTask().getBalanceScore() > 0) {
+                dualTaskData.put(date, assessment.getDualTask().getBalanceScore());
+            }
+
+            // SENSORY ATAXIA data
+            if (assessment.getSensoryAtaxia() != null && assessment.getSensoryAtaxia().getBalanceScore() > 0) {
+                sensoryAtaxiaData.put(date, assessment.getSensoryAtaxia().getBalanceScore());
+            }
         }
 
-        return new JointSpasticityChart(1, "Spasticity", historicalData, "Elevated");
-    }
-    private WalkingSpeedChart createWalkingSpeedeChart() {
-        // Create map of historical data (Date -> Value)
-        Map<Date, Float> historicalData = new HashMap<>();
-        Calendar cal = Calendar.getInstance();
-        Random rand = new Random();
-
-        // Generate 2 years of stimulated daily data
-        for (int i = 0; i < 730; i++) { // 730 days = ~2 years
-            cal.setTime(new Date());
-            cal.add(Calendar.DAY_OF_YEAR, -i);
-            Date date = cal.getTime();
-
-            // Simulate pelvic sway values with some trend
-            float baseValue = 5 + (i / 100f); // Slowly increasing trend
-            float randomVariation = rand.nextFloat() * 3;
-            float value = baseValue + randomVariation;
-
-            historicalData.put(date, value);
+        // Determine condition based on latest baseline data
+        if (!baselineData.isEmpty()) {
+            // Get the latest baseline value
+            Date latestDate = baselineData.keySet().iterator().next(); // TreeMap is sorted, first is earliest
+            for (Date date : baselineData.keySet()) {
+                if (date.after(latestDate)) {
+                    latestDate = date;
+                }
+            }
+            float latestValue = baselineData.get(latestDate);
         }
 
-        return new WalkingSpeedChart(1, "Walking Speed", historicalData, "Elevated");
-    }
-    private BalanceChart createBalanceChart() {
-        // Create map of historical data (Date -> Value)
-        Map<Date, Float> historicalData = new HashMap<>();
-        Calendar cal = Calendar.getInstance();
-        Random rand = new Random();
+        // Create chart with baseline data
+        BalanceChart chart = new BalanceChart(1, "Balance", baselineData);
 
-        // Generate 2 years of stimulated daily data
-        for (int i = 0; i < 730; i++) { // 730 days = ~2 years
-            cal.setTime(new Date());
-            cal.add(Calendar.DAY_OF_YEAR, -i);
-            Date date = cal.getTime();
-
-            // Simulate pelvic sway values with some trend
-            float baseValue = 5 + (i / 100f); // Slowly increasing trend
-            float randomVariation = rand.nextFloat() * 3;
-            float value = baseValue + randomVariation;
-
-            historicalData.put(date, value);
+        // Add other test type data
+        if (!dualTaskData.isEmpty()) {
+            chart.setDualTaskData(dualTaskData);
+        }
+        if (!sensoryAtaxiaData.isEmpty()) {
+            chart.setSensoryAtaxiaData(sensoryAtaxiaData);
         }
 
-        return new BalanceChart(1, "Balance", historicalData, "Elevated");
+        return chart;
     }
+
+    private MuscleStiffnessChart createSpasticityChartFromData(List<AssessmentData> assessments) {
+        Map<Date, Float> baselineData = new TreeMap<>();
+        Map<Date, Float> dualTaskData = new TreeMap<>();
+        Map<Date, Float> sensoryAtaxiaData = new TreeMap<>();
+
+        for (AssessmentData assessment : assessments) {
+            Date date = assessment.getTimestamp();
+
+            // BASELINE data - calculate average stiffness
+            if (assessment.getBaseline() != null && assessment.getBaseline().getStiffness() != null) {
+                float avgStiffness = calculateAverageStiffness(assessment.getBaseline().getStiffness());
+                if (avgStiffness > 0) {
+                    baselineData.put(date, avgStiffness);
+                }
+            }
+
+            // DUAL TASK data
+            if (assessment.getDualTask() != null && assessment.getDualTask().getStiffness() != null) {
+                float avgStiffness = calculateAverageStiffness(assessment.getDualTask().getStiffness());
+                if (avgStiffness > 0) {
+                    dualTaskData.put(date, avgStiffness);
+                }
+            }
+
+            // SENSORY ATAXIA data
+            if (assessment.getSensoryAtaxia() != null && assessment.getSensoryAtaxia().getStiffness() != null) {
+                float avgStiffness = calculateAverageStiffness(assessment.getSensoryAtaxia().getStiffness());
+                if (avgStiffness > 0) {
+                    sensoryAtaxiaData.put(date, avgStiffness);
+                }
+            }
+        }
+
+        // Determine condition
+        String condition = "No Data";
+        if (!baselineData.isEmpty()) {
+            Date latestDate = baselineData.keySet().iterator().next();
+            for (Date date : baselineData.keySet()) {
+                if (date.after(latestDate)) {
+                    latestDate = date;
+                }
+            }
+            float latestValue = baselineData.get(latestDate);
+            condition = determineSpasticityCondition(latestValue);
+        }
+
+        MuscleStiffnessChart chart = new MuscleStiffnessChart(2, "Spasticity", baselineData, condition);
+
+        if (!dualTaskData.isEmpty()) {
+            chart.setDualTaskData(dualTaskData);
+        }
+        if (!sensoryAtaxiaData.isEmpty()) {
+            chart.setSensoryAtaxiaData(sensoryAtaxiaData);
+        }
+
+        return chart;
+    }
+
+    private EnduranceChart createEnduranceChartFromData(List<AssessmentData> assessments) {
+        Map<Date, Float> baselineData = new TreeMap<>();
+        Map<Date, Float> dualTaskData = new TreeMap<>();
+        Map<Date, Float> sensoryAtaxiaData = new TreeMap<>();
+
+        for (AssessmentData assessment : assessments) {
+            Date date = assessment.getTimestamp();
+
+            // BASELINE data
+            if (assessment.getBaseline() != null && assessment.getBaseline().getEnduranceScore() > 0) {
+                baselineData.put(date, assessment.getBaseline().getEnduranceScore());
+            }
+
+            // DUAL TASK data
+            if (assessment.getDualTask() != null && assessment.getDualTask().getEnduranceScore() > 0) {
+                dualTaskData.put(date, assessment.getDualTask().getEnduranceScore());
+            }
+
+            // SENSORY ATAXIA data
+            if (assessment.getSensoryAtaxia() != null && assessment.getSensoryAtaxia().getEnduranceScore() > 0) {
+                sensoryAtaxiaData.put(date, assessment.getSensoryAtaxia().getEnduranceScore());
+            }
+        }
+
+        // Determine condition
+        String condition = "No Data";
+        if (!baselineData.isEmpty()) {
+            Date latestDate = baselineData.keySet().iterator().next();
+            for (Date date : baselineData.keySet()) {
+                if (date.after(latestDate)) {
+                    latestDate = date;
+                }
+            }
+            float latestValue = baselineData.get(latestDate);
+            condition = determineEnduranceCondition(latestValue);
+        }
+
+        EnduranceChart chart = new EnduranceChart(3, "Endurance", baselineData, condition);
+
+        if (!dualTaskData.isEmpty()) {
+            chart.setDualTaskData(dualTaskData);
+        }
+        if (!sensoryAtaxiaData.isEmpty()) {
+            chart.setSensoryAtaxiaData(sensoryAtaxiaData);
+        }
+
+        return chart;
+    }
+
+    private WalkingSpeedChart createWalkingSpeedChartFromData(List<AssessmentData> assessments) {
+        Map<Date, Float> baselineData = new TreeMap<>();
+        Map<Date, Float> dualTaskData = new TreeMap<>();
+        Map<Date, Float> sensoryAtaxiaData = new TreeMap<>();
+
+        for (AssessmentData assessment : assessments) {
+            Date date = assessment.getTimestamp();
+
+            // BASELINE data
+            if (assessment.getBaseline() != null && assessment.getBaseline().getWalkingSpeed() > 0) {
+                baselineData.put(date, assessment.getBaseline().getWalkingSpeed());
+            }
+
+            // DUAL TASK data
+            if (assessment.getDualTask() != null && assessment.getDualTask().getWalkingSpeed() > 0) {
+                dualTaskData.put(date, assessment.getDualTask().getWalkingSpeed());
+            }
+
+            // SENSORY ATAXIA data
+            if (assessment.getSensoryAtaxia() != null && assessment.getSensoryAtaxia().getWalkingSpeed() > 0) {
+                sensoryAtaxiaData.put(date, assessment.getSensoryAtaxia().getWalkingSpeed());
+            }
+        }
+
+        // Determine condition
+        String condition = "No Data";
+        if (!baselineData.isEmpty()) {
+            Date latestDate = baselineData.keySet().iterator().next();
+            for (Date date : baselineData.keySet()) {
+                if (date.after(latestDate)) {
+                    latestDate = date;
+                }
+            }
+            float latestValue = baselineData.get(latestDate);
+            condition = determineWalkingSpeedCondition(latestValue);
+        }
+
+        WalkingSpeedChart chart = new WalkingSpeedChart(4, "Walking Speed", baselineData, condition);
+
+        if (!dualTaskData.isEmpty()) {
+            chart.setDualTaskData(dualTaskData);
+        }
+        if (!sensoryAtaxiaData.isEmpty()) {
+            chart.setSensoryAtaxiaData(sensoryAtaxiaData);
+        }
+
+        return chart;
+    }
+
+    // Helper methods for calculating averages
+    private float calculateAverageStiffness(Map<String, Float> stiffnessMap) {
+        if (stiffnessMap == null || stiffnessMap.isEmpty()) {
+            return 0f;
+        }
+
+        float sum = 0f;
+        int count = 0;
+
+        for (Float stiffness : stiffnessMap.values()) {
+            if (stiffness != null && stiffness > 0) {
+                sum += stiffness;
+                count++;
+            }
+        }
+
+        return count > 0 ? sum / count : 0f;
+    }
+
+    // Condition determination methods
+    private String determineBalanceCondition(float value) {
+        if (value > 85) return "Excellent";
+        if (value > 70) return "Good";
+        if (value > 50) return "Fair";
+        return "Poor";
+    }
+
+    private String determineSpasticityCondition(float value) {
+        // Lower is better for spasticity
+        if (value < 20) return "Excellent";
+        if (value < 40) return "Good";
+        if (value < 60) return "Fair";
+        return "Poor";
+    }
+
+    private String determineEnduranceCondition(float value) {
+        // Higher is better for endurance (seconds)
+        if (value > 180) return "Excellent";
+        if (value > 120) return "Good";
+        if (value > 60) return "Fair";
+        return "Poor";
+    }
+
+    private String determineWalkingSpeedCondition(float value) {
+        // Higher is better for walking speed (m/s)
+        if (value > 1.4) return "Excellent";
+        if (value > 1.0) return "Good";
+        if (value > 0.6) return "Fair";
+        return "Poor";
+    }
+
 }

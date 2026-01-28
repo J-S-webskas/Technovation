@@ -25,15 +25,62 @@
         app:layout_constraintStart_toStartOf="@id/camera_preview_view"
         app:layout_constraintTop_toTopOf="@id/camera_preview_view" />
 
-    <!-- UI Controls (e.g., Start/Stop Analysis Button) -->
-    <Button
-        android:id="@+id/btn_analyze"
-        android:layout_width="wrap_content"
+      <!-- Add these to your existing layout -->
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Start Analysis"
-        android:elevation="10dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:background="#80000000"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <!-- Test Status -->
+        <TextView
+            android:id="@+id/tv_test_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ready"
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            android:textStyle="bold"/>
+
+        <!-- Test Control Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btn_baseline"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Baseline"
+                android:backgroundTint="#008000"/>
+
+            <Button
+                android:id="@+id/btn_dual_task"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Dual Task"
+                android:backgroundTint="#FFFF00"/>
+
+            <Button
+                android:id="@+id/btn_sensory"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Eyes Closed"
+                android:backgroundTint="#FF0000"/>
+
+            <Button
+                android:id="@+id/btn_cancel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CANCEL"/>
+        </LinearLayout>
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

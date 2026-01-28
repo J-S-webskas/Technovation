@@ -18,6 +18,9 @@ public class MonthAxisValueFormatter extends ValueFormatter {
 
     @Override
     public String getFormattedValue(float value) {
+
+        if (Float.isNaN(value)) return "";
+
         // value represents months offset from current date
         int monthsAgo = (int) value;
 

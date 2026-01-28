@@ -13,9 +13,16 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.*;
 import com.github.mikephil.charting.data.*;
+import com.github.mikephil.charting.formatter.ValueFormatter;
+import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class ChartCardViewHolder extends RecyclerView.ViewHolder {
@@ -28,57 +35,230 @@ public class ChartCardViewHolder extends RecyclerView.ViewHolder {
     TextView conditionIndicator;
     LineChart lineChart;
     CardView cardView;
+    TextView emptyStateText;
+
     public ChartCardViewHolder(@NonNull View itemView) {
         super(itemView);
         chartTitle = itemView.findViewById(R.id.chartTitle);
         chartDate = itemView.findViewById(R.id.chartDate);
         averageValue = itemView.findViewById(R.id.averageValue);
         maxValue = itemView.findViewById(R.id.maxValue);
-        conditionIndicator = itemView.findViewById(R.id.conditionIndicator);
         lineChart = itemView.findViewById(R.id.lineChart);
         cardView = itemView.findViewById(R.id.pelvicSwayCardView);
+        emptyStateText = itemView.findViewById(R.id.emptyStateText);
 
-        lineChart.setTouchEnabled(true);
-        lineChart.setDragEnabled(true);
-        lineChart.setScaleEnabled(true);
-        lineChart.setPinchZoom(true);
+        configureChartSettings(lineChart);
+    }
+
+    private void configureChartSettings(LineChart chart) {
+        chart.setTouchEnabled(true);
+        chart.setDragEnabled(true);
+        chart.setScaleEnabled(true);
+        chart.setPinchZoom(true);
+        chart.setDrawMarkers(false);
+        chart.setHighlightPerDragEnabled(false);
+        chart.setHighlightPerTapEnabled(false);
     }
 
     public void bind(BiomechanicalChart chart, String timeRange, BiomechanicalAdapter.OnCardClickListener listener) {
         // Set basic text
         chartTitle.setText(chart.getTitle());
         chartDate.setText(chart.getFormattedLatestDate());
-        conditionIndicator.setText(chart.getCondition());
 
-        // Get data filtered for the selected time range
-        List<Entry> chartData = chart.getDataForTimeRange(timeRange);
-//        Map<String, List<Entry>> chartData = chart.getAllDataSeries(timeRange);
+        // Prepare data for all three test types
+        Map<String, List<Entry>> allData = new LinkedHashMap<>();
 
-        // Convert List<Entry> to List<Float> for chart setup. Setup chart with filtered data
-        List<Float> floatData = new ArrayList<>();
-        for (Entry entry : chartData) {
-            floatData.add(entry.getY());
+        if (chart.hasBaselineData()) {
+            allData.put("Baseline", chart.getDataForTimeRangeWithGaps(chart.baselineData, timeRange));
+        }
+        if (chart.hasDualTaskData()) {
+            allData.put("Dual Task", chart.getDataForTimeRangeWithGaps(chart.dualTaskData, timeRange));
+        }
+        if (chart.hasSensoryAtaxiaData()) {
+            allData.put("Sensory Ataxia", chart.getDataForTimeRangeWithGaps(chart.sensoryAtaxiaData, timeRange));
         }
 
-        // Setup chart with the filtered data
-        setupMultipleGradientAreaChart(lineChart, floatData, chart.getCondition(), timeRange);
+        if (!allData.isEmpty()) {
+            // HAS DATA - Show chart with available test types
+            showChartState(chart, allData, timeRange);
+        } else {
+            // NO DATA - Show empty state
+            showEmptyState(chart);
+        }
 
-        // Update stats based on filtered data
-        updateStats(floatData, chart.getCondition());
+        // Set click listener if needed
+        if (listener != null) {
+            cardView.setOnClickListener(v -> listener.onCardClick(chart.getId()));
+        }
+    }
 
-        // Set condition indicator
-        setConditionIndicator(conditionIndicator, chart.getCondition());
+    private void showChartState(BiomechanicalChart chart, Map<String, List<Entry>> allData, String timeRange) {
+        // Hide empty state
+        if (emptyStateText != null) {
+            emptyStateText.setVisibility(View.GONE);
+        }
+
+        // Show chart
+        lineChart.setVisibility(View.VISIBLE);
+
+        // Clear any previous data
+        lineChart.clear();
+
+        // Setup chart with available test types AND GAPS
+        setupMultiTestChartWithGaps(lineChart, allData, chart.getTitle(), chart.getUnit(), timeRange);
+
+        // Update stats
+        updateChartStats(chart, allData);
+    }
+
+    private void showEmptyState(BiomechanicalChart chart) {
+        // Hide chart
+        lineChart.setVisibility(View.GONE);
+
+        // Clear any existing data
+        lineChart.clear();
+
+        // Set "No Data" message on chart
+        lineChart.setNoDataText("No test data available");
+        lineChart.setNoDataTextColor(Color.GRAY);
+
+        // Show empty message
+        if (emptyStateText != null) {
+            emptyStateText.setVisibility(View.VISIBLE);
+            String message = chart.getEmptyMessage();
+            if (message == null || message.isEmpty()) {
+                message = "Start a recording test to see graph!";
+            }
+            emptyStateText.setText(message);
+        }
+
+        // Update stats to show no data
+        averageValue.setText("No data available");
+        maxValue.setText("Record tests to see trends");
+
+        // Invalidate to refresh
+        lineChart.invalidate();
+    }
+
+    private void setupMultiTestChartWithGaps(LineChart chart, Map<String, List<Entry>> dataSeries,
+                                             String title, String unit, String timeRange) {
+        // Create datasets
+        List<ILineDataSet> dataSets = new ArrayList<>();
+
+        // Colors for each test type
+        int[] lineColors = {
+                Color.parseColor("#2196F3"),  // Blue - Baseline
+                Color.parseColor("#FF9800"),  // Orange - Dual Task
+                Color.parseColor("#F44336")   // Red - Sensory Ataxia
+        };
+
+        // Create datasets for each available test type
+        int index = 0;
+        for (Map.Entry<String, List<Entry>> series : dataSeries.entrySet()) {
+            List<Entry> entries = series.getValue();
+
+            if (entries != null && !entries.isEmpty()) {
+                String testType = series.getKey();
+                int colorIndex = getColorIndexForTestType(testType);
+
+                LineDataSet dataSet = createTestTypeDataSetWithGaps(
+                        entries,
+                        testType,
+                        lineColors[colorIndex],
+                        testType.equals("Baseline") ? 2.5f : 2f // Thicker line for baseline
+                );
+                dataSets.add(dataSet);
+                index++;
+            }
+        }
+
+        if (!dataSets.isEmpty()) {
+            LineData lineData = new LineData(dataSets);
+            chart.setData(lineData);
+
+            // Configure chart appearance
+            configureChartAppearance(chart, dataSeries.size() > 1, unit, dataSeries, timeRange);
+        }
+    }
+
+    private LineDataSet createTestTypeDataSetWithGaps(List<Entry> entries, String label,
+                                                      int lineColor, float lineWidth) {
+        LineDataSet dataSet = new LineDataSet(entries, label);
+
+        // Line styling
+        dataSet.setColor(lineColor);
+        dataSet.setLineWidth(lineWidth);
+
+        // Disable circles and values for cleaner look with gaps
+        dataSet.setDrawCircles(false);
+        dataSet.setDrawCircleHole(false);
+        dataSet.setDrawValues(false);
+
+        // Make line dashed to visually indicate gaps
+        dataSet.enableDashedLine(10f, 5f, 0f);
+
+        // Linear mode works better with gaps
+        dataSet.setMode(LineDataSet.Mode.LINEAR);
+
+        // Don't fill area with gaps
+        dataSet.setDrawFilled(false);
+
+        return dataSet;
+    }
+
+    private void configureChartAppearance(LineChart chart, boolean showLegend,
+                                          String unit, Map<String, List<Entry>> dataSeries,
+                                          String timeRange) {
+        chart.getDescription().setEnabled(false);
+
+        // Configure legend
+        Legend legend = chart.getLegend();
+        legend.setEnabled(showLegend);
+        legend.setHorizontalAlignment(Legend.LegendHorizontalAlignment.CENTER);
+        legend.setVerticalAlignment(Legend.LegendVerticalAlignment.BOTTOM);
+        legend.setOrientation(Legend.LegendOrientation.HORIZONTAL);
+        legend.setDrawInside(false);
+        legend.setYOffset(10f);
+        legend.setTextSize(10f);
+        legend.setForm(Legend.LegendForm.LINE);
+
+        // Configure X axis
+        XAxis xAxis = chart.getXAxis();
+        setupXAxis(xAxis, timeRange);
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setDrawGridLines(true);
+        xAxis.setGridColor(Color.parseColor("#22000000"));
+        xAxis.setGranularity(1f);
+        xAxis.setTextSize(10f);
+        xAxis.setTextColor(Color.DKGRAY);
+
+        // Configure Y axis
+        YAxis leftAxis = chart.getAxisLeft();
+        leftAxis.setDrawGridLines(true);
+        leftAxis.setGridColor(Color.parseColor("#22000000"));
+        leftAxis.setGridLineWidth(0.5f);
+        leftAxis.setTextSize(10f);
+        leftAxis.setTextColor(Color.DKGRAY);
+
+        // Set Y axis range
+        configureYAxisRange(leftAxis, dataSeries, unit);
+
+        // Hide right axis
+        chart.getAxisRight().setEnabled(false);
+
+        // Add animation
+        chart.animateX(800);
     }
 
     private void setupXAxis(XAxis xAxis, String timeRange) {
         switch (timeRange) {
             case "1month":
                 xAxis.setValueFormatter(new DayAxisValueFormatter());
-                xAxis.setLabelCount(5, true);
+                xAxis.setLabelCount(6, true);
                 break;
             case "6month":
                 xAxis.setValueFormatter(new WeekAxisValueFormatter());
-                xAxis.setLabelCount(6, true);
+                xAxis.setLabelCount(8, true);
                 break;
             case "1year":
                 xAxis.setValueFormatter(new MonthAxisValueFormatter());
@@ -86,143 +266,162 @@ public class ChartCardViewHolder extends RecyclerView.ViewHolder {
                 break;
             case "max":
                 xAxis.setValueFormatter(new YearAxisValueFormatter());
-                xAxis.setLabelCount(5, true);
+                xAxis.setLabelCount(6, true);
                 break;
         }
     }
 
-    private void updateStats(List<Float> data, String condition) {
-        if (data == null || data.isEmpty()) {
-            averageValue.setText("Avg: N/A");
-            maxValue.setText("Max: N/A");
-            return;
+    private void configureYAxisRange(YAxis yAxis, Map<String, List<Entry>> dataSeries, String unit) {
+        // Find min and max across all test types, ignoring NaN values
+        float minValue = Float.MAX_VALUE;
+        float maxValue = Float.MIN_VALUE;
+
+        for (List<Entry> entries : dataSeries.values()) {
+            for (Entry entry : entries) {
+                float value = entry.getY();
+                // Skip NaN values
+                if (!Float.isNaN(value)) {
+                    if (value < minValue) minValue = value;
+                    if (value > maxValue) maxValue = value;
+                }
+            }
         }
 
-        float sum = 0;
-        float max = Float.MIN_VALUE;
-        for (float value : data) {
-            sum += value;
-            if (value > max) max = value;
-        }
-
-        float avg = sum / data.size();
-        averageValue.setText(String.format("Avg: %.1f mm", avg));
-        maxValue.setText(String.format("Max: %.1f mm", max));
-    }
-    private void setupMultipleGradientAreaChart(LineChart chart, List<Float> swayData,
-                                                String condition, String timeRange) {
-        // Clear any existing data
-        chart.clear();
-
-        // Create entries from sway data
-        List<Entry> entries = new ArrayList<>();
-        for (int i = 0; i < swayData.size(); i++) {
-            entries.add(new Entry(i, swayData.get(i)));
-        }
-
-        // Create dataset
-        LineDataSet dataSet = new LineDataSet(entries, "Pelvic Sway");
-
-        // Set line color based on condition
-        int lineColor = getConditionColor(condition);
-        dataSet.setColor(lineColor);
-        dataSet.setLineWidth(2f);
-
-        // Enable gradient fill
-        dataSet.setDrawFilled(true);
-        dataSet.setFillAlpha(80);
-
-        // Set gradient color
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            Drawable gradientDrawable = ContextCompat.getDrawable(itemView.getContext(),
-                    getGradientDrawable(condition));
-            dataSet.setFillDrawable(gradientDrawable);
+        // Set reasonable defaults if no valid data
+        if (minValue == Float.MAX_VALUE || maxValue == Float.MIN_VALUE) {
+            minValue = 0;
+            switch (unit.toLowerCase()) {
+                case "%": maxValue = 100; break;
+                case "seconds":
+                case "s": maxValue = 200; break;
+                case "m/s": maxValue = 2.0f; break;
+                case "score": maxValue = 100; break;
+                default: maxValue = 100;
+            }
         } else {
-            // Fallback for older versions
-            dataSet.setFillColor(lineColor);
-            dataSet.setFillAlpha(80);
+            // Add padding
+            float range = maxValue - minValue;
+            float padding = range * 0.1f;
+
+            minValue = Math.max(0, minValue - padding);
+            maxValue += padding;
         }
 
-        // Disable circles for smooth area look
-        dataSet.setDrawCircles(false);
-        dataSet.setDrawCircleHole(false);
+        yAxis.setAxisMinimum(minValue);
+        yAxis.setAxisMaximum(maxValue);
+        yAxis.setLabelCount(6, true);
 
-        // Disable values on points
-        dataSet.setDrawValues(false);
+        // Format based on unit
+        yAxis.setValueFormatter(new ValueFormatter() {
+            @Override
+            public String getFormattedValue(float value) {
+                if (Float.isNaN(value)) return "";
 
-        // Create line data
-        LineData lineData = new LineData(dataSet);
-        chart.setData(lineData);
+                switch (unit.toLowerCase()) {
+                    case "%": return String.format("%.0f%%", value);
+                    case "seconds":
+                    case "s": return String.format("%.0f", value);
+                    case "m/s": return String.format("%.2f", value);
+                    case "score": return String.format("%.0f", value);
+                    default: return String.format("%.1f", value);
+                }
+            }
+        });
+    }
 
-        // Configure chart appearance
-        chart.getDescription().setEnabled(false);
-        chart.getLegend().setEnabled(false);
+    private void updateChartStats(BiomechanicalChart chart, Map<String, List<Entry>> allData) {
+        StringBuilder stats = new StringBuilder();
 
-        // Configure X axis
-        XAxis xAxis = chart.getXAxis();
-        setupXAxis(xAxis, timeRange);
-        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
-        xAxis.setDrawGridLines(false);
-        xAxis.setGranularity(1f);
+        // Count number of tests for each type
+        if (chart.hasBaselineData()) {
+            int baselineCount = chart.baselineData.size();
+            stats.append(baselineCount).append(" baseline");
+        }
 
-        // Configure Y axis
-        YAxis leftAxis = chart.getAxisLeft();
-        leftAxis.setDrawGridLines(true);
-        leftAxis.setGridColor(Color.parseColor("#33000000"));
-        leftAxis.setAxisMinimum(0f); // Start from 0
-        leftAxis.setGranularity(10f);
+        if (chart.hasDualTaskData()) {
+            if (stats.length() > 0) stats.append(", ");
+            int dualTaskCount = chart.dualTaskData.size();
+            stats.append(dualTaskCount).append(" dual");
+        }
 
-        // Hide right axis
-        chart.getAxisRight().setEnabled(false);
+        if (chart.hasSensoryAtaxiaData()) {
+            if (stats.length() > 0) stats.append(", ");
+            int sensoryCount = chart.sensoryAtaxiaData.size();
+            stats.append(sensoryCount).append(" sensory");
+        }
 
-        // Disable touch interactions
-        chart.setTouchEnabled(false);
-        chart.setDragEnabled(false);
-        chart.setScaleEnabled(false);
-        chart.setPinchZoom(false);
+        if (stats.length() > 0) {
+            averageValue.setText("Tests: " + stats.toString());
+        } else {
+            averageValue.setText("No tests recorded");
+        }
 
-        // Refresh chart
-        chart.invalidate();
+        // Show date range of data
+        Date earliest = getEarliestDate(chart);
+        Date latest = chart.getLatestDate();
+
+        if (earliest != null && latest != null) {
+            SimpleDateFormat sdf = new SimpleDateFormat("MMM yyyy", Locale.getDefault());
+            maxValue.setText(sdf.format(earliest) + " - " + sdf.format(latest));
+        } else {
+            maxValue.setText("Record tests to see timeline");
+        }
+    }
+
+    private Date getEarliestDate(BiomechanicalChart chart) {
+        Date earliest = null;
+
+        for (Map<Date, Float> dataMap : Arrays.asList(
+                chart.baselineData,
+                chart.dualTaskData,
+                chart.sensoryAtaxiaData)) {
+
+            for (Date date : dataMap.keySet()) {
+                if (earliest == null || date.before(earliest)) {
+                    earliest = date;
+                }
+            }
+        }
+
+        return earliest;
+    }
+
+    private int getColorIndexForTestType(String testType) {
+        switch (testType.toLowerCase()) {
+            case "baseline": return 0;
+            case "dual task": return 1;
+            case "sensory ataxia": return 2;
+            default: return 0;
+        }
     }
 
     private void setConditionIndicator(TextView indicator, String condition) {
         switch (condition.toLowerCase()) {
-            case "normal":
+            case "excellent":
                 indicator.setBackgroundResource(R.drawable.bg_normal_indicator);
+                indicator.setTextColor(Color.WHITE);
                 break;
-            case "elevated":
+            case "good":
                 indicator.setBackgroundResource(R.drawable.bg_elevated_indicator);
+                indicator.setTextColor(Color.WHITE);
                 break;
-            case "critical":
+            case "fair":
                 indicator.setBackgroundResource(R.drawable.bg_critical_indicator);
+                indicator.setTextColor(Color.WHITE);
+                break;
+            case "poor":
+                indicator.setBackgroundResource(R.drawable.bg_critical_indicator);
+                indicator.setTextColor(Color.WHITE);
+                break;
+            case "no data":
+                indicator.setBackgroundResource(R.drawable.bg_gray_indicator);
+                indicator.setTextColor(Color.DKGRAY);
+                break;
+            default:
+                indicator.setBackgroundResource(R.drawable.bg_gray_indicator);
+                indicator.setTextColor(Color.DKGRAY);
                 break;
         }
         indicator.setText(condition.toUpperCase());
-        indicator.setTextColor(Color.WHITE);
-    }
-    private int getConditionColor(String condition) {
-        switch (condition.toLowerCase()) {
-            case "normal":
-                return Color.parseColor("#4CAF50"); // Green
-            case "elevated":
-                return Color.parseColor("#FF9800"); // Orange
-            case "critical":
-                return Color.parseColor("#F44336"); // Red
-            default:
-                return Color.parseColor("#2196F3"); // Blue
-        }
-    }
-
-    private int getGradientDrawable(String condition) {
-        switch (condition.toLowerCase()) {
-            case "normal":
-                return R.drawable.gradient_green;
-            case "elevated":
-                return R.drawable.gradient_orange;
-            case "critical":
-                return R.drawable.gradient_red;
-            default:
-                return R.drawable.gradient_blue;
-        }
     }
 }

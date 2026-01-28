@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.Log;
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class DataStorageManager {
@@ -31,6 +32,28 @@ public class DataStorageManager {
             Log.e(TAG, "Error saving assessment: " + e.getMessage());
             return false;
         }
+    }
+
+    /**
+     * Load ALL assessments from storage
+     */
+    public static List<AssessmentData> loadAllAssessments(Context context) {
+        List<AssessmentData> allAssessments = new ArrayList<>();
+        List<String> assessmentIds = listAssessments(context);
+
+        for (String sessionId : assessmentIds) {
+            AssessmentData assessment = loadAssessment(context, sessionId);
+            if (assessment != null) {
+                allAssessments.add(assessment);
+            }
+        }
+
+        // Sort by timestamp (newest first)
+        Collections.sort(allAssessments, (a1, a2) ->
+                a2.getTimestamp().compareTo(a1.getTimestamp()));
+
+        Log.d(TAG, "Loaded " + allAssessments.size() + " assessments");
+        return allAssessments;
     }
 
     /**

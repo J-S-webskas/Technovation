@@ -9,8 +9,6 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.github.mikephil.charting.data.ChartData;
-
 import java.util.List;
 
 public class BiomechanicalAdapter extends RecyclerView.Adapter<ChartCardViewHolder> {
@@ -21,7 +19,7 @@ public class BiomechanicalAdapter extends RecyclerView.Adapter<ChartCardViewHold
     private String timeRange;
 
     public interface OnCardClickListener {
-        void onCardClick(int position, ChartData data);
+        void onCardClick(int position);
     }
 //     Initializes with chart data and initial time range
     public BiomechanicalAdapter(List<BiomechanicalChart> charts, String timeRange, Context context) {
@@ -68,7 +66,6 @@ public class BiomechanicalAdapter extends RecyclerView.Adapter<ChartCardViewHold
         // Create Bundle with arguments
         Bundle args = new Bundle();
         args.putString("chart_title", chart.getTitle());
-        args.putString("condition", chart.getCondition());
         fragment.setArguments(args);
 
         activity.getSupportFragmentManager()

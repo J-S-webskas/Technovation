@@ -87,8 +87,14 @@ dependencies {
     implementation(libs.camera.camera2)
     implementation(libs.camera.lifecycle)
 
+    // Room Database for storing results
+    implementation("androidx.room:room-runtime:2.5.2")
+    annotationProcessor("androidx.room:room-compiler:2.5.2")
+
     implementation("com.github.anastr:speedviewlib:1.6.1")
 
     implementation("androidx.navigation:navigation-fragment-ktx:2.6.0")
     implementation("androidx.navigation:navigation-ui-ktx:2.6.0")
+
+    implementation("com.google.code.gson:gson:2.10.1")
 }

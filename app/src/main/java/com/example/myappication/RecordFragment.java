@@ -1,13 +1,16 @@
 package com.example.myappication;
 
 import android.Manifest;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.graphics.PointF;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
-import androidx.annotation.NonNull;
+
 import androidx.camera.core.*;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
@@ -16,12 +19,11 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import android.util.Size;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.mediapipe.framework.image.BitmapImageBuilder;
@@ -30,19 +32,33 @@ import com.google.mediapipe.tasks.core.BaseOptions;
 import com.google.mediapipe.tasks.vision.core.RunningMode;
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarker;
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarkerResult;
+
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import com.google.mediapipe.framework.image.MPImage;
+
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class RecordFragment extends Fragment {
+    private Handler autoStopHandler;
+    private Runnable autoStopRunnable;
+    private static final int BASELINE_DURATION_MS = 30000; // 30 seconds
+    private static final int DUAL_TASK_DURATION_MS = 30000; // 30 seconds
+    private static final int SENSORY_DURATION_MS = 30000; // 30 seconds
     // Permission Code
     private static final int PERMISSION_REQUEST_CAMERA = 101;
 
     // Views
     private PreviewView previewView;
     private OverlayView overlayView;
-    private Button analyzeButton;
+    private String username;
 
     // Camera & MediaPipe
     private ExecutorService cameraExecutor;
@@ -50,31 +66,33 @@ public class RecordFragment extends Fragment {
 
     // Data Storage
     private AssessmentData currentAssessment;
-    private String currentTestType = "none"; // "baseline", "dual", "sensory"
-    private long testStartTime;
+    private Calendar baselineTestDate;
+    private Calendar dualTaskTestDate;
+    private Calendar sensoryAtaxiaTestDate;
+    private GaitMetrics currentGaitMetrics;
+    private Map<String, ArrayDeque<Float>> angleHistories;
+    private List<float[]> hipPositions;
+    private float frameRate = 30f;
+
+    // Test tracking
+    private enum TestType { NONE, BASELINE, DUAL_TASK, SENSORY_ATAXIA }
+    private TestType currentTestType = TestType.NONE; // NONE, BASELINE, DUAL_TASK, SENSORY_ATAXIA
+    private DualTaskTest activeTest;
+    private TestResult baselineResult;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_record, container, false);
 
-        view.setBackgroundColor(Color.RED);
-
-        TextView testText = new TextView(getContext());
-        testText.setText("TEST: Fragment Loaded!");
-        testText.setTextColor(Color.WHITE);
-        testText.setTextSize(30);
-        testText.setGravity(Gravity.CENTER);
-
-        ((ViewGroup) view).addView(testText);
+        setupTestControls(view);
 
         previewView = view.findViewById(R.id.camera_preview_view);
         overlayView = view.findViewById(R.id.pose_overlay_view);
-        analyzeButton = view.findViewById(R.id.btn_analyze);
 
         cameraExecutor = Executors.newSingleThreadExecutor();
 
         // Request Camera Permissions
-        if (hasCameraPermission()) {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
             startCamera();
         } else {
             ActivityCompat.requestPermissions(
@@ -87,32 +105,34 @@ public class RecordFragment extends Fragment {
         // Initialize MediaPipe
         setupPoseDetector();
 
-        // Initialize new assessment
-        currentAssessment = new AssessmentData("patient_001");
-
-        analyzeButton.setOnClickListener(v -> toggleAnalysis());
+        // INITIALIZE GAIT ANALYSIS
+        initializeGaitAnalysis();
         return view;
     }
 
-    private boolean hasCameraPermission() {
-        return ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
+    private void initializeGaitAnalysis() {
+        angleHistories = new HashMap<>();
+        angleHistories.put("left_hip", new ArrayDeque<>(100));
+        angleHistories.put("right_hip", new ArrayDeque<>(100));
+        angleHistories.put("left_knee", new ArrayDeque<>(100));
+        angleHistories.put("right_knee", new ArrayDeque<>(100));
+        angleHistories.put("left_ankle", new ArrayDeque<>(100));
+        angleHistories.put("right_ankle", new ArrayDeque<>(100));
+
+        hipPositions = new ArrayList<>();
+
+        // Reset test state
+        currentTestType = TestType.NONE;
+        baselineResult = null;
+        activeTest = null;
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        if (requestCode == PERMISSION_REQUEST_CAMERA && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            startCamera();
-        } else {
-            Log.e("RecordFragment", "Camera permission denied");
-            // Inform user
-        }
-    }
-
+    //// sets up the model and connects the mediapipe model for creating 3d pose skeleton
     private void setupPoseDetector() {
         // Download pose_landmarker_lite.task from MediaPipe and place it in app/src/main/assets/
         String modelAssetPath = "pose_landmarker_lite.task";
 
-        BaseOptions baseOptions = BaseOptions.builder()
+        BaseOptions baseOptions = BaseOptions.builder()  // Handles fundamental model loading
                 .setModelAssetPath(modelAssetPath)
                 .build();
 
@@ -120,8 +140,8 @@ public class RecordFragment extends Fragment {
         PoseLandmarker.PoseLandmarkerOptions options =
                 PoseLandmarker.PoseLandmarkerOptions.builder()
                         .setBaseOptions(baseOptions)
-                        .setRunningMode(RunningMode.LIVE_STREAM)
-                        .setResultListener(this::processPoseResult)
+                        .setRunningMode(RunningMode.LIVE_STREAM)  // Real-time processing
+                        .setResultListener(this::processPoseResult)  // Method that recieves pose detection results
                         .setErrorListener((error) -> Log.e("MediaPipe", "Error: " + error.getMessage()))
                         .build();
 
@@ -186,12 +206,19 @@ public class RecordFragment extends Fragment {
         }, ContextCompat.getMainExecutor(requireContext()));
     }
 
-    private void processPoseResult(PoseLandmarkerResult result, MPImage image) {  // This runs on a background thread. Use landmarks for your MS analysis.
-        if (result == null || result.landmarks().isEmpty()) return;
+    //// Calculates extracted landmarks from mediapipe, BoM, CoM, and angles from extractJointCoordinates. Passes these data to OverlayView to draw  3D skeletons
+    private void processPoseResult(PoseLandmarkerResult result, MPImage image) {  // This runs on a background thread. Use landmarks for MS analysis.
+        if (result == null || result.landmarks().isEmpty()) return; // If no person detected, skip processing.
 
         List<NormalizedLandmark> landmarks = result.landmarks().get(0); // Get landmarks of the first (main) person
 
-        // --- INSERT YOUR MS ANALYSIS CALCULATIONS HERE ---
+        // Joint coordinate
+        Map<String, float[]> joints = extractJointCoordinates(landmarks);
+
+        // Only call if a test is actively happening
+        if (currentTestType != TestType.NONE) {
+            runGaitAnalysis(joints);
+        }
         // 1. Calculate Center of Mass (CoM) - midpoint of hips (landmarks 23 & 24)
         NormalizedLandmark leftHip = landmarks.get(23);
         NormalizedLandmark rightHip = landmarks.get(24);
@@ -206,19 +233,425 @@ public class RecordFragment extends Fragment {
         PointF bosStart = new PointF(leftHeel.x(), leftHeel.y());
         PointF bosEnd = new PointF(rightHeel.x(), rightHeel.y());
 
-        // 3. Calculate Joint Angles for Stiffness Analysis (Hip, Knee, Ankle)
-        // Use = Python logic with landmarks 23, 25, 27 for left leg, etc.
-
-        // --- UPDATE THE OVERLAY VIEW ON THE UI THREAD ---
         requireActivity().runOnUiThread(() -> {
             overlayView.updateLandmarksAndGraphics(landmarks, comPoint, bosStart, bosEnd);
-            // Update TextViews with results (e.g., "Balance: STABLE", "Asymmetry: 5.2°")
         });
     }
 
-    private void toggleAnalysis() {
-        // Logic to start/stop recording and analysis sessions for your 6 tests
-        Log.d("RecordFragment", "Analysis toggled - Connect to your test manager");
+    //// Extracts angles only needed for gait into a map (removes facial expression, hands,)
+    private Map<String, float[]> extractJointCoordinates(List<NormalizedLandmark> landmarks) {
+        Map<String, float[]> joints = new HashMap<>();
+
+        // Convert MediaPipe landmarks to [x, y] arrays
+        // MediaPipe landmark indices: https://developers.google.com/mediapipe/solutions/vision/pose_landmarker
+
+        // Left leg
+        joints.put("left_hip", new float[]{landmarks.get(23).x(), landmarks.get(23).y()});
+        joints.put("left_knee", new float[]{landmarks.get(25).x(), landmarks.get(25).y()});
+        joints.put("left_ankle", new float[]{landmarks.get(27).x(), landmarks.get(27).y()});
+        joints.put("left_heel", new float[]{landmarks.get(29).x(), landmarks.get(29).y()});
+
+        // Right leg
+        joints.put("right_hip", new float[]{landmarks.get(24).x(), landmarks.get(24).y()});
+        joints.put("right_knee", new float[]{landmarks.get(26).x(), landmarks.get(26).y()});
+        joints.put("right_ankle", new float[]{landmarks.get(28).x(), landmarks.get(28).y()});
+        joints.put("right_heel", new float[]{landmarks.get(30).x(), landmarks.get(30).y()});
+
+        // Shoulders (for hip angle calculation)
+        joints.put("left_shoulder", new float[]{landmarks.get(11).x(), landmarks.get(11).y()});
+        joints.put("right_shoulder", new float[]{landmarks.get(12).x(), landmarks.get(12).y()});
+
+        return joints;
+    }
+
+    //// Get the data calculated from GaitAnalyzer and stores it in GaitMetrics...
+    private void runGaitAnalysis(Map<String, float[]> joints) {
+
+        //// 1. Calculate metrics: angles
+        float leftKneeAngle = GaitAnalyzer.calculateAngle(
+                joints.get("left_hip"),
+                joints.get("left_knee"),
+                joints.get("left_ankle")
+        );
+
+        float rightKneeAngle = GaitAnalyzer.calculateAngle(
+                joints.get("right_hip"),
+                joints.get("right_knee"),
+                joints.get("right_ankle")
+        );
+
+        // Hip angles (shoulder-hip-knee, like your Python code)
+        float leftHipAngle = GaitAnalyzer.calculateAngle(
+                joints.get("left_shoulder"),
+                joints.get("left_hip"),
+                joints.get("left_knee")
+        );
+
+        float rightHipAngle = GaitAnalyzer.calculateAngle(
+                joints.get("right_shoulder"),
+                joints.get("right_hip"),
+                joints.get("right_knee")
+        );
+
+        // Ankle angles (simplified like Python)
+        float leftAnkleAngle = 180 - leftKneeAngle;
+        float rightAnkleAngle = 180 - rightKneeAngle;
+
+        //// 2. Store in history
+        angleHistories.get("left_knee").add(leftKneeAngle);
+        angleHistories.get("right_knee").add(rightKneeAngle);
+        angleHistories.get("left_hip").add(leftHipAngle);
+        angleHistories.get("right_hip").add(rightHipAngle);
+        angleHistories.get("left_ankle").add(leftAnkleAngle);
+        angleHistories.get("right_ankle").add(rightAnkleAngle);
+
+        //// 3. Store hip positions for speed calculation
+        float[] hipPosition = {
+                joints.get("left_hip")[0], joints.get("left_hip")[1],
+                joints.get("right_hip")[0], joints.get("right_hip")[1]
+        };
+        hipPositions.add(hipPosition);
+
+        //// 4. Calculate current gait metrics
+        float currentSpeed = GaitAnalyzer.calculateWalkingSpeed(hipPositions, frameRate);
+
+        Map<String, Float> stiffnessScores = new HashMap<>();
+        for (String joint : Arrays.asList("left_knee", "right_knee", "left_hip", "right_hip")) {
+            float stiffness = GaitAnalyzer.calculateMuscleStiffness(
+                    angleHistories.get(joint), joint, frameRate
+            );
+            stiffnessScores.put(joint, stiffness);
+        }
+
+        Map<String, Float> asymmetryScores = new HashMap<>();
+
+        // Knee asymmetry
+        float kneeAsymmetry = GaitAnalyzer.calculateAsymmetry(
+                angleHistories.get("left_knee"),
+                angleHistories.get("right_knee"),
+                "knee"
+        );
+        asymmetryScores.put("knee", kneeAsymmetry);
+
+        // Hip asymmetry
+        float hipAsymmetry = GaitAnalyzer.calculateAsymmetry(
+                angleHistories.get("left_hip"),
+                angleHistories.get("right_hip"),
+                "hip"
+        );
+        asymmetryScores.put("hip", hipAsymmetry);
+
+        //// 5. Update active test if running
+        if (currentTestType != TestType.NONE && activeTest != null) {
+            activeTest.addMeasurement(currentSpeed, stiffnessScores, asymmetryScores);
+        }
+
+        //// 6. Store metrics for UI display
+        currentGaitMetrics = new GaitMetrics(
+                currentSpeed,
+                stiffnessScores.get("left_knee"),
+                stiffnessScores.get("right_knee"),
+                kneeAsymmetry,
+                hipAsymmetry
+        );
+        currentGaitMetrics = new GaitMetrics(
+                currentSpeed,
+                stiffnessScores.get("left_knee"),
+                stiffnessScores.get("right_knee"),
+                kneeAsymmetry,
+                hipAsymmetry
+        );
+    }
+
+    // Simple data holder for UI
+    private static class GaitMetrics {
+        float speed;
+        float leftKneeStiffness;
+        float rightKneeStiffness;
+        float kneeAsymmetry;
+        float hipAsymmetry;
+
+        GaitMetrics(float speed, float leftKnee, float rightKnee,
+                    float kneeAsym, float hipAsym) {
+            this.speed = speed;
+            this.leftKneeStiffness = leftKnee;
+            this.rightKneeStiffness = rightKnee;
+            this.kneeAsymmetry = kneeAsym;
+            this.hipAsymmetry = hipAsym;
+        }
+    }
+
+    // In your onCreateView, add test control buttons
+    private void setupTestControls(View view) {
+        Button btnBaseline = view.findViewById(R.id.btn_baseline);
+        Button btnDualTask = view.findViewById(R.id.btn_dual_task);
+        Button btnSensory = view.findViewById(R.id.btn_sensory);
+        Button btnCancel = view.findViewById(R.id.btn_cancel);
+
+        btnBaseline.setOnClickListener(v -> startBaselineTest());
+        btnDualTask.setOnClickListener(v -> startDualTaskTest());
+        btnSensory.setOnClickListener(v -> startSensoryAtaxiaTest());
+        btnCancel.setOnClickListener(v -> stopCurrentTestAndDiscardData());
+    }
+
+    private void stopCurrentTestAndDiscardData() {
+        if (currentTestType == TestType.NONE) {
+            Toast.makeText(requireContext(), "No test running", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Cancel the auto-stop timer
+        if (autoStopHandler != null && autoStopRunnable != null) {
+            autoStopHandler.removeCallbacks(autoStopRunnable);
+            autoStopHandler = null;
+            autoStopRunnable = null;
+        }
+
+        // Clear test state
+        TestType cancelledTest = currentTestType;
+        currentTestType = TestType.NONE;
+        activeTest = null;
+
+        // Clear measurement data
+        initializeGaitAnalysis();
+
+        String testName = getTestName(cancelledTest);
+        Toast.makeText(requireContext(), testName + " test cancelled - results not saved", Toast.LENGTH_SHORT).show();
+    }
+
+    // Helper method
+    private String getTestName(TestType testType) {
+        switch (testType) {
+            case BASELINE:
+                return "Baseline";
+            case DUAL_TASK:
+                return "Dual task";
+            case SENSORY_ATAXIA:
+                return "Sensory ataxia";
+            default:
+                return "Test";
+        }
+    }
+
+    private void startBaselineTest() {
+        if (currentTestType != TestType.NONE) { // If the user clicks another test while this test is running, discard this test data
+            stopCurrentTestAndDiscardData();
+            return;
+        }
+        if (!currentAssessment.canTakeBaselineTest()) {
+            Toast.makeText(requireContext(), "Baseline test was already completed for today. Record again tomorrow!", Toast.LENGTH_SHORT).show();
+        }
+        // Clear old data
+        initializeGaitAnalysis();
+
+        // Start baseline recording
+        currentTestType = TestType.BASELINE;
+        baselineTestDate = Calendar.getInstance();
+
+        Toast.makeText(requireContext(), "Baseline test started - Walk normally for 30 seconds", Toast.LENGTH_SHORT).show();
+
+        autoStopHandler = new Handler(Looper.getMainLooper());
+        autoStopRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (currentTestType == TestType.BASELINE) {
+                    Toast.makeText(requireContext(), "Baseline test completed!",
+                            Toast.LENGTH_SHORT).show();
+                    saveBaselineResults();
+                    currentTestType = TestType.NONE;
+                }
+            }
+        };
+        autoStopHandler.postDelayed(autoStopRunnable, BASELINE_DURATION_MS ); // 30 seconds = 30000ms
+    }
+
+    private void startDualTaskTest() {
+        if (currentTestType != TestType.NONE) {
+            stopCurrentTestAndDiscardData();
+            return;
+        }
+
+        if (baselineResult == null) {
+            Toast.makeText(requireContext(), "Record baseline first!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (!currentAssessment.canTakeDualTaskTest()) {
+            Toast.makeText(requireContext(), "Dual task test was already completed for today. Record again tomorrow!", Toast.LENGTH_SHORT).show();
+        }
+
+        // Create dual task test
+        activeTest = new DualTaskTest(baselineResult);
+        activeTest.startTest();
+        currentTestType = TestType.DUAL_TASK;
+
+        Toast.makeText(requireContext(), "Dual task test started - Count backwards from 30", Toast.LENGTH_SHORT).show();
+
+        autoStopHandler = new Handler(Looper.getMainLooper());
+        autoStopRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (currentTestType == TestType.DUAL_TASK) {
+                    Toast.makeText(requireContext(), "Dual task test completed!",
+                            Toast.LENGTH_SHORT).show();
+                    saveOtherTestResults(currentTestType);
+                    currentTestType = TestType.NONE;
+                }
+            }
+        };
+
+        autoStopHandler.postDelayed(autoStopRunnable, DUAL_TASK_DURATION_MS ); // 30 seconds = 30000ms
+    }
+
+    private void startSensoryAtaxiaTest() {
+        if (currentTestType != TestType.NONE) {
+            stopCurrentTestAndDiscardData();
+            return;
+        }
+
+        if (baselineResult == null) {
+            Toast.makeText(requireContext(), "Record baseline test first!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (!currentAssessment.canTakeSensoryAtaxiaTest()) {
+            Toast.makeText(requireContext(), "Sensory ataxia test was already completed for today. Record again tomorrow!", Toast.LENGTH_SHORT).show();
+        }
+
+        // Create sensory ataxia test
+        activeTest = new DualTaskTest(baselineResult);
+        activeTest.startTest();
+        currentTestType = TestType.SENSORY_ATAXIA;
+
+        Toast.makeText(requireContext(), "Sensory ataxia test started - Close your eyes and walk", Toast.LENGTH_SHORT).show();
+
+        autoStopHandler = new Handler(Looper.getMainLooper());
+        autoStopRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (currentTestType == TestType.SENSORY_ATAXIA) {
+                    Toast.makeText(requireContext(), "Sensory ataxia test completed!",
+                            Toast.LENGTH_SHORT).show();
+                    saveOtherTestResults(currentTestType);
+                    currentTestType = TestType.NONE;
+                }
+            }
+        };
+
+        autoStopHandler.postDelayed(autoStopRunnable, SENSORY_DURATION_MS ); // 30 seconds = 30000ms
+        currentAssessment.setSensoryAtaxiaTestDate(new Date());
+    }
+
+    private void saveOtherTestResults(TestType currentTestType) {
+        // Calculate metrics (same as baseline
+        // TODO: DECIDE IF WE KEEP MY IMPLEMENTATION OR MANREEN'S
+        float currentSpeed = GaitAnalyzer.calculateWalkingSpeed(hipPositions, frameRate);
+        // Calculate walking speed comparison with baseline
+        TestComparisons comparisons = currentAssessment.getComparisons();
+        if (currentAssessment.getBaseline().getWalkingSpeed() > 0) {
+            float baselineSpeed = currentAssessment.getBaseline().getWalkingSpeed();
+            float speedChange = ((currentSpeed - baselineSpeed) / baselineSpeed) * 100;
+            if (currentTestType == TestType.SENSORY_ATAXIA) {
+                comparisons.setSensoryAtaxiaSpeedChange(speedChange);
+            } else {
+                comparisons.setDualTaskSpeedChange(speedChange);
+            }
+        }
+        // TODO: NEED MANREEN'S BALANCE CODE TO CALCULATE BALANCE
+//        float currentBalance = GaitAnalyzer.calculateBalance(, );
+        //TODO: IF HAVE TIME, ADD HIP
+        Map<String, Float> stiffnessScores = new HashMap<>();
+        for (String joint : Arrays.asList("left_knee", "right_knee")) {
+            float stiffness = GaitAnalyzer.calculateMuscleStiffness(
+                    angleHistories.get(joint), joint, frameRate
+            );
+            stiffnessScores.put(joint, stiffness);
+        }
+        if (!currentAssessment.getBaseline().getStiffness().isEmpty()) {
+            float baselineStiffnessForKnee = currentAssessment.getBaseline().getStiffness().get("knee");
+            float stiffnessChangeForKnee = (stiffnessScores.get("knee") - baselineStiffnessForKnee) / baselineStiffnessForKnee * 100;
+            if (currentTestType == TestType.SENSORY_ATAXIA) {
+                comparisons.setSensoryAtaxiaStiffnessChange(stiffnessChangeForKnee);
+            } else {
+                comparisons.setDualTaskStiffnessChange(stiffnessChangeForKnee);
+            }
+        }
+        // Calculates asymmetry for knee
+        //TODO: IF HAVE TIME, ADD HIP
+        Map<String, Float> asymmetryScores = new HashMap<>();
+        float kneeAsymmetry = GaitAnalyzer.calculateAsymmetry(
+                angleHistories.get("left_knee"),
+                angleHistories.get("right_knee"),
+                "knee"
+        );
+//        if (!currentAssessment.getBaseline().getAsymmetry().isEmpty()) {
+//            float baselineStiffnessForKnee = currentAssessment.getBaseline().getStiffness().get("knee");
+//            float stiffnessChangeForKnee = (stiffnessScores.get("knee") - baselineStiffnessForKnee) / baselineStiffnessForKnee * 100;
+//            if (currentTestType == TestType.SENSORY_ATAXIA) {
+//                comparisons.setSensoryAtaxiaStiffnessChange(stiffnessChangeForKnee);
+//            } else {
+//                comparisons.setDualTaskStiffnessChange(stiffnessChangeForKnee);
+//            }
+//        }
+
+        // Save to currentAssessment's SENSORY_ATAXIA & DUAL_TASK section. IS THIS NECESSARY?
+//        if (currentTestType == TestType.SENSORY_ATAXIA) {
+//            currentAssessment.getSensoryAtaxia().setWalkingSpeed(currentSpeed);
+//            currentAssessment.getSensoryAtaxia().setStiffness(stiffnessScores);
+//            currentAssessment.getSensoryAtaxia().setAsymmetry(asymmetryScores);
+//        } else {
+//            currentAssessment.getDualTask().setWalkingSpeed(currentSpeed);
+//            currentAssessment.getDualTask().setStiffness(stiffnessScores);
+//            currentAssessment.getDualTask().setAsymmetry(asymmetryScores);
+//        }
+
+        // TODO: CALCULATE BALANCE
+//        if (currentAssessment.getBaseline().getBalanceScore() > 0) {
+//            float baselineBalance = currentAssessment.getBaseline().getBalanceScore();
+//            float balanceChange = ((currentBalance - baselineBalance) / baselineBalance) * 100;
+//            comparisons.setSensoryAtaxiaBalanceChange(balanceChange);
+//        }
+        // TODO: Calculate endurance changes for sensory ataxia
+//        if (currentAssessment.getBaseline().getEnduranceScore() > 0) {
+//            float baselineEndurance = currentAssessment.getBaseline().getEnduranceScore();
+//            float EnduranceChange = ((currentEndurance - baselineEndurance) / baselineEndurance) * 100;
+//            comparisons.setSensoryAtaxiaEnduranceChange(enduranceChange);
+//        }
+    }
+
+    // TODO: baseline currently only saves muscle stiffness and asymmetry. It does not save speed, balance, or endurance (code needed from Manreen)
+    private void saveBaselineResults() {
+        float currentSpeed = GaitAnalyzer.calculateWalkingSpeed(hipPositions, frameRate);
+        //TODO: IF HAVE TIME, ADD HIP
+        Map<String, Float> stiffnessScores = new HashMap<>();
+        for (String joint : Arrays.asList("left_knee", "right_knee")) {
+            float stiffness = GaitAnalyzer.calculateMuscleStiffness(
+                    angleHistories.get(joint), joint, frameRate
+            );
+            stiffnessScores.put(joint, stiffness);
+        }
+        //TODO: IF HAVE TIME, ADD HIP
+        Map<String, Float> asymmetryScores = new HashMap<>();
+        float kneeAsymmetry = GaitAnalyzer.calculateAsymmetry(
+                angleHistories.get("left_knee"),
+                angleHistories.get("right_knee"),
+                "knee"
+        );
+        asymmetryScores.put("knee", kneeAsymmetry);
+
+        Toast.makeText(requireContext(), "Baseline recorded!", Toast.LENGTH_SHORT).show();
+
+        // Save to database
+        currentAssessment.getBaseline().setWalkingSpeed(currentSpeed);
+        currentAssessment.getBaseline().setStiffness(stiffnessScores);
+        currentAssessment.getBaseline().setAsymmetry(asymmetryScores);
+        currentAssessment.setStatus(AssessmentData.AssessmentStatus.BASELINE_COMPLETED);
+        currentAssessment.setBaselineTestDate(new Date());
+
+        // SAVE USING DataStorageManager
+        DataStorageManager.saveAssessment(requireContext(), currentAssessment);
+
+        Toast.makeText(requireContext(), "Baseline test saved. Next test available tomorrow.", Toast.LENGTH_LONG).show();
     }
 
     @Override

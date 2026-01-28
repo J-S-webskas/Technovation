@@ -10,6 +10,19 @@
     app:cardBackgroundColor="@android:color/white"
     android:layout_margin="8dp">
 
+    <TextView
+        android:id="@+id/emptyStateText"
+        android:layout_width="match_parent"
+        android:layout_height="180dp"
+        android:gravity="center"
+        android:text="Start a recording test to see graph!"
+        android:textColor="@android:color/darker_gray"
+        android:textSize="16sp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/chartDate"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -39,16 +52,6 @@
             android:layout_marginTop="2dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/chartTitle" />
-
-        <TextView
-            android:id="@+id/conditionIndicator"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="NORMAL"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"/>
 
         <!-- Chart -->
         <com.github.mikephil.charting.charts.LineChart

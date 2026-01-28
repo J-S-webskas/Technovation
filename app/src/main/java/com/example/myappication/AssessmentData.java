@@ -1,6 +1,12 @@
 package com.example.myappication;
+import android.content.Context;
+
+import com.google.gson.Gson;
+
 import java.io.Serializable;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -28,12 +34,15 @@ import java.util.UUID;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
 
 public class AssessmentData implements Serializable {
     private String sessionId;
     private Date timestamp;
     private String patientId;
-
+    private static final String TAG = "AssessmentStorage";  // For logging
+    private static final String ASSESSMENTS_DIR = "assessments"; // Folder name
+    private TestComparisons comparisons;
     // 1. BASELINE DATA (Normal walking)
     private BaselineAssessment baseline;
 
@@ -43,11 +52,17 @@ public class AssessmentData implements Serializable {
     // 3. SENSORY ATAXIA DATA (Eyes closed walking)
     private SensoryAtaxiaAssessment sensoryAtaxia;
 
-    // Auto-calculated final scores (READ-ONLY)
-    private TestComparisons comparisons;
-
     // Status tracking
     private AssessmentStatus status;
+
+    // Storage dates
+    private Date baselineTestDate;
+    private Date dualTaskTestDate;
+    private Date sensoryAtaxiaTestDate;
+
+    public void setStatus(AssessmentStatus assessmentStatus) {
+        this.status = assessmentStatus;
+    }
 
     public enum AssessmentStatus {
         NOT_STARTED,
@@ -64,10 +79,94 @@ public class AssessmentData implements Serializable {
         this.baseline = new BaselineAssessment();
         this.dualTask = new DualTaskAssessment();
         this.sensoryAtaxia = new SensoryAtaxiaAssessment();
+        this.comparisons = new TestComparisons();
     }
     public String getSessionId() { return sessionId; }
     public Date getTimestamp() { return timestamp; }
     public String getPatientId() { return patientId; }
+
+    public Date getBaselineTestDate() { return baselineTestDate; }
+    public void setBaselineTestDate(Date date) {
+        this.baselineTestDate = date;
+        updateStatus();
+    }
+    public Date getDualTaskTestDate() { return dualTaskTestDate; }
+    public void setDualTaskTestDate(Date date) {
+        this.dualTaskTestDate = date;
+        updateStatus();
+    }
+    public Date getSensoryAtaxiaTestDate() { return sensoryAtaxiaTestDate; }
+    public void setSensoryAtaxiaTestDate(Date date) {
+        this.sensoryAtaxiaTestDate = date;
+        updateStatus();
+    }
+    public boolean canTakeBaselineTest() {
+        if (baselineTestDate == null) return true; // Never taken
+
+        Calendar now = Calendar.getInstance();
+        Calendar lastTest = Calendar.getInstance();
+        lastTest.setTime(baselineTestDate);
+
+        // Check if 24 hours have passed
+        lastTest.add(Calendar.DAY_OF_YEAR, 1);
+        return now.after(lastTest);
+    }
+
+    public boolean canTakeDualTaskTest() {
+        if (dualTaskTestDate == null) return true;
+
+        Calendar now = Calendar.getInstance();
+        Calendar lastTest = Calendar.getInstance();
+        lastTest.setTime(dualTaskTestDate);
+
+        lastTest.add(Calendar.DAY_OF_YEAR, 1);
+        return now.after(lastTest);
+    }
+
+    public boolean canTakeSensoryAtaxiaTest() {
+        if (sensoryAtaxiaTestDate == null) return true;
+
+        Calendar now = Calendar.getInstance();
+        Calendar lastTest = Calendar.getInstance();
+        lastTest.setTime(sensoryAtaxiaTestDate);
+
+        lastTest.add(Calendar.DAY_OF_YEAR, 1);
+        return now.after(lastTest);
+    }
+    private void updateStatus() {
+        boolean hasBaseline = baselineTestDate != null;
+        boolean hasDualTask = dualTaskTestDate != null;
+        boolean hasSensory = sensoryAtaxiaTestDate != null;
+
+        if (hasBaseline && hasDualTask && hasSensory) {
+            status = AssessmentStatus.ALL_COMPLETED;
+        } else if (hasBaseline && hasDualTask) {
+            status = AssessmentStatus.DUAL_TASK_COMPLETED;
+        } else if (hasBaseline && hasSensory) {
+            status = AssessmentStatus.SENSORY_ATAXIA_COMPLETED;
+        } else if (hasBaseline) {
+            status = AssessmentStatus.BASELINE_COMPLETED;
+        } else {
+            status = AssessmentStatus.NOT_STARTED;
+        }
+    }
+
+    public BaselineAssessment getBaseline() {
+        return baseline;
+    }
+
+    public DualTaskAssessment getDualTask() {
+        return dualTask;
+    }
+
+    public SensoryAtaxiaAssessment getSensoryAtaxia() {
+        return sensoryAtaxia;
+    }
+
+    public TestComparisons getComparisons() {
+        return comparisons;
+    }
+
 }
 
 class JointAngleData implements Serializable {
@@ -111,6 +210,34 @@ class BaselineAssessment implements Serializable {
     private float balanceScore;               // Calculated balance
     private float enduranceScore;             // Baseline endurance
     // ... getters/setters?
+
+    public float getBalanceScore() {
+        return balanceScore;
+    }
+
+    public Map<String, Float> getStiffness() {
+        return stiffness;
+    }
+
+    public float getEnduranceScore() {
+        return enduranceScore;
+    }
+
+    public float getWalkingSpeed() {
+        return walkingSpeed;
+    }
+
+    public void setWalkingSpeed(float currentSpeed) {
+        this.walkingSpeed = currentSpeed;
+    }
+
+    public void setStiffness(Map<String, Float> stiffnessScores) {
+        this.stiffness = stiffnessScores;
+    }
+
+    public void setAsymmetry(Map<String, Float> asymmetryScores) {
+        this.asymmetry = asymmetryScores;
+    }
 }
 
 // DualTaskAssessment
@@ -122,7 +249,19 @@ class DualTaskAssessment implements Serializable {
     private float balanceScore;
     private float enduranceScore;
     private float cognitiveLoadImpact;        // How much counting affects walking
-    // ... getters/setters?
+    public float getBalanceScore() {
+        return balanceScore;
+    }
+    public Map<String, Float> getStiffness() {
+        return stiffness;
+    }
+    public float getEnduranceScore() {
+        return enduranceScore;
+    }
+    public float getWalkingSpeed() {
+        return walkingSpeed;
+    }
+
 }
 
 // SensoryAtaxiaAssessment
@@ -134,20 +273,78 @@ class SensoryAtaxiaAssessment implements Serializable {
     private float balanceScore;
     private float enduranceScore;
     private float visualDependence;           // How much eyes closed affects walking
-    // ... getters/setters
+
+    public float getBalanceScore() {
+        return balanceScore;
+    }
+    public Map<String, Float> getStiffness() {
+        return stiffness;
+    }
+    public float getEnduranceScore() {
+        return enduranceScore;
+    }
+    public float getWalkingSpeed() {
+        return walkingSpeed;
+    }
+    public void setWalkingSpeed(float walkingSpeed) {
+        this.walkingSpeed = walkingSpeed;
+    }
+    public void setStiffness(Map<String, Float> stiffness) {
+        this.stiffness = stiffness;
+    }
+    public void setAsymmetry (Map<String, Float> asymmetry) {
+        this.asymmetry = asymmetry;
+    }
 }
 
-// TestComparisons
 class TestComparisons implements Serializable {
     // DUAL TASK vs BASELINE changes
     private float dualTaskSpeedChange;       // e.g., -25% (slower with counting)
     private float dualTaskBalanceChange;     // e.g., -15% (worse balance with counting)
     private float dualTaskStiffnessChange;   // e.g., +30% (more stiff with counting)
+    private float dualTaskEnduranceChange; // e.g., -50% (much worse balance eyes closed)
 
     // SENSORY ATAXIA vs BASELINE changes
     private float sensoryAtaxiaSpeedChange;  // e.g., -40% (much slower eyes closed)
     private float sensoryAtaxiaBalanceChange; // e.g., -50% (much worse balance eyes closed)
+    private float sensoryAtaxiaStiffnessChange; // e.g., -50% (much worse balance eyes closed)
+    private float sensoryAtaxiaEnduranceChange; // e.g., -50% (much worse balance eyes closed)
 
     // ASYMMETRY SCORES
     private Map<String, Float> asymmetryScores;  // hip, knee, ankle
+
+    public TestComparisons() {
+        this.asymmetryScores = new HashMap<>();
+    }
+    public void setDualTaskSpeedChange(float value) {
+        this.dualTaskSpeedChange = value;
+    }
+
+    public void setDualTaskBalanceChange(float value) {
+        this.dualTaskBalanceChange = value;
+    }
+    public void setDualTaskEnduranceChange(float value) {
+        this.sensoryAtaxiaBalanceChange = value;
+    }
+
+    public void setDualTaskStiffnessChange(float value) {
+        this.dualTaskStiffnessChange = value;
+    }
+
+    public void setSensoryAtaxiaSpeedChange(float value) {
+        this.sensoryAtaxiaSpeedChange = value;
+    }
+
+    public void setSensoryAtaxiaBalanceChange(float value) {
+        this.sensoryAtaxiaBalanceChange = value;
+    }
+
+    // Passes in knee only for now
+    public void setSensoryAtaxiaStiffnessChange(float value) {
+        this.sensoryAtaxiaStiffnessChange = value;
+    }
+
+    public void setSensoryAtaxiaEnduranceChange(float value) {
+        this.sensoryAtaxiaBalanceChange = value;
+    }
 }

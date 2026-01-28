@@ -7,11 +7,11 @@ import android.view.View;
 import com.google.mediapipe.tasks.components.containers.NormalizedLandmark;
 import java.util.List;
 
+//// Stores visual data only while the video is running. For visuals only Once the video closes it deletes them
 public class OverlayView extends View {
     private List<NormalizedLandmark> currentLandmarks;
-    private PointF comPoint; // Your calculated Center of Mass
-    private PointF bosStart, bosEnd; // Your calculated Base of Support line
-
+    private PointF comPoint; // Calculated Center of Mass
+    private PointF bosStart, bosEnd; // Calculated Base of Support line
     private Paint skeletonPaint = new Paint();
     private Paint dotPaint = new Paint();
     private Paint textPaint = new Paint();
@@ -70,8 +70,36 @@ public class OverlayView extends View {
     }
 
     private void drawSkeleton(Canvas canvas, int width, int height) {
-        // Map normalized landmarks [0,1] to screen pixels and draw lines between them.
-        // Example: Draw line between left shoulder (landmark 11) and left hip (23)
-        // Implement connections for full skeleton
+        // 1. Define connections (same as Python's POSE_CONNECTIONS)
+        int[][] connections = {
+                {0, 1}, {1, 2}, {2, 3}, {3, 7},    // Face
+                {0, 4}, {4, 5}, {5, 6}, {6, 8},
+                {9, 10},                            // Body center
+                {11, 12}, {11, 23}, {12, 24}, {23, 24}, // Torso
+                {11, 13}, {13, 15},                 // Left arm
+                {12, 14}, {14, 16},                 // Right arm
+                {23, 25}, {25, 27}, {27, 29}, {29, 31}, // Left leg
+                {24, 26}, {26, 28}, {28, 30}, {30, 32}  // Right leg
+        };
+
+        // 2. Draw each connection
+        for (int[] conn : connections) {
+            NormalizedLandmark start = currentLandmarks.get(conn[0]);
+            NormalizedLandmark end = currentLandmarks.get(conn[1]);
+
+            float startX = start.x() * width;
+            float startY = start.y() * height;
+            float endX = end.x() * width;
+            float endY = end.y() * height;
+
+            canvas.drawLine(startX, startY, endX, endY, skeletonPaint);
+        }
+
+        // 3. Draw landmarks as circles
+        for (NormalizedLandmark landmark : currentLandmarks) {
+            float x = landmark.x() * width;
+            float y = landmark.y() * height;
+            canvas.drawCircle(x, y, 5, dotPaint); // 5px radius
+        }
     }
 }
