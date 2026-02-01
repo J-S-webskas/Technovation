@@ -1,6 +1,10 @@
 package com.example.myappication;
 
+import static android.content.ContentValues.TAG;
+
 import android.os.Bundle;
+import android.util.Log;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
@@ -17,9 +21,6 @@ public class MainActivity extends AppCompatActivity {
 
         bottomNavigationView = findViewById(R.id.bottom_navigation);
 
-        // Set default fragment (Trend Fragment)
-        loadFragment(new TrendFragment());
-
         // Set navigation listener
         bottomNavigationView.setOnNavigationItemSelectedListener(item -> {
             Fragment fragment = null;
@@ -32,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
             } else if (itemId == R.id.nav_trend) {
                 fragment = new TrendFragment();
             } else if (itemId == R.id.nav_record) {
-                fragment = new RecordFragment();
+                fragment = new CameraFragment();
             } else if (itemId == R.id.nav_report) {
                 fragment = new ReportFragment();
             }
@@ -44,14 +45,20 @@ public class MainActivity extends AppCompatActivity {
             return false;
         });
 
-        // Set Trend as selected by default
-        bottomNavigationView.setSelectedItemId(R.id.nav_trend);
+        // Set Main as selected by default
+        bottomNavigationView.setSelectedItemId(R.id.nav_home);
     }
 
     private void loadFragment(Fragment fragment) {
-        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        transaction.replace(R.id.fragment_container, fragment);
-//        transaction.addToBackStack(null); // Optional: enable back navigation
-        transaction.commit();
+        try {
+            Log.d(TAG, "Loading fragment: " + fragment.getClass().getSimpleName());
+            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+            transaction.replace(R.id.fragment_container, fragment);
+            transaction.commit();
+            Log.d(TAG, "Fragment loaded successfully");
+        } catch (Exception e) {
+            Log.e(TAG, "Error loading fragment: " + e.getMessage(), e);
+            e.printStackTrace();
+        }
     }
 }

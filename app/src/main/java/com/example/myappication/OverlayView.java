@@ -1,105 +1,144 @@
 package com.example.myappication;
 
 import android.content.Context;
-import android.graphics.*;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.view.View;
-import com.google.mediapipe.tasks.components.containers.NormalizedLandmark;
+import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
+import com.google.mediapipe.tasks.vision.core.RunningMode;
+import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarker;
+import com.google.mediapipe.tasks.components.containers.Connection;
+import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarkerResult;
 import java.util.List;
+import java.util.Set;
 
-//// Stores visual data only while the video is running. For visuals only Once the video closes it deletes them
 public class OverlayView extends View {
-    private List<NormalizedLandmark> currentLandmarks;
-    private PointF comPoint; // Calculated Center of Mass
-    private PointF bosStart, bosEnd; // Calculated Base of Support line
-    private Paint skeletonPaint = new Paint();
-    private Paint dotPaint = new Paint();
-    private Paint textPaint = new Paint();
 
-    public OverlayView(Context context, AttributeSet attrs) {
+    private static final float LANDMARK_STROKE_WIDTH = 12f;
+
+    @Nullable
+    private PoseLandmarkerResult results;
+    private Paint pointPaint = new Paint();
+    private Paint linePaint = new Paint();
+
+    private float scaleFactor = 1f;
+    private int imageWidth = 1;
+    private int imageHeight = 1;
+
+    public OverlayView(Context context) {
+        super(context);
+        init(context, null);
+    }
+
+    public OverlayView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
-        setupPaints();
+        init(context, attrs);
     }
 
-    private void setupPaints() {
-        skeletonPaint.setColor(Color.GREEN);
-        skeletonPaint.setStrokeWidth(8.0f);
-        skeletonPaint.setStyle(Paint.Style.STROKE);
-
-        dotPaint.setColor(Color.RED);
-        dotPaint.setStrokeWidth(20.0f);
-        dotPaint.setStrokeCap(Paint.Cap.ROUND);
-
-        textPaint.setColor(Color.WHITE);
-        textPaint.setTextSize(48.0f);
+    public OverlayView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+        super(context, attrs, defStyleAttr);
+        init(context, attrs);
     }
 
-    // Call this from the Fragment to update the drawing data
-    public void updateLandmarksAndGraphics(List<NormalizedLandmark> landmarks, PointF com, PointF bosS, PointF bosE) {
-        this.currentLandmarks = landmarks;
-        this.comPoint = com;
-        this.bosStart = bosS;
-        this.bosEnd = bosE;
-        invalidate(); // Triggers onDraw()
+    private void init(Context context, @Nullable AttributeSet attrs) {
+        initPaints();
+    }
+
+    public void clear() {
+        results = null;
+        pointPaint.reset();
+        linePaint.reset();
+        invalidate();
+        initPaints();
+    }
+
+    private void initPaints() {
+        linePaint.setColor(ContextCompat.getColor(getContext(), com.google.android.material.R.color.design_default_color_secondary));
+        linePaint.setStrokeWidth(LANDMARK_STROKE_WIDTH);
+        linePaint.setStyle(Paint.Style.STROKE);
+
+        pointPaint.setColor(Color.YELLOW);
+        pointPaint.setStrokeWidth(LANDMARK_STROKE_WIDTH);
+        pointPaint.setStyle(Paint.Style.FILL);
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        if (currentLandmarks == null) return;
 
-        int width = getWidth();
-        int height = getHeight();
+        if (results != null) {
+            List<List<com.google.mediapipe.tasks.components.containers.NormalizedLandmark>> landmarks =
+                    results.landmarks();
 
-        // 1. Draw Pose Skeleton (Connect landmarks with lines)
-        drawSkeleton(canvas, width, height);
+            for (List<com.google.mediapipe.tasks.components.containers.NormalizedLandmark> landmark : landmarks) {
+                // Draw points
+                for (com.google.mediapipe.tasks.components.containers.NormalizedLandmark normalizedLandmark : landmark) {
+                    canvas.drawPoint(
+                            normalizedLandmark.x() * imageWidth * scaleFactor,
+                            normalizedLandmark.y() * imageHeight * scaleFactor,
+                            pointPaint
+                    );
+                }
 
-        // 2. Draw Center of Mass (CoM) as a big red dot
-        if (comPoint != null) {
-            canvas.drawPoint(comPoint.x * width, comPoint.y * height, dotPaint);
+                // Draw lines
+                // Draw lines - CORRECT WAY
+                Set<Connection> connections = PoseLandmarker.POSE_LANDMARKS;
+                for (Connection connection : connections) {
+                    int startIdx = connection.start();    // These might be getStart() or start()
+                    int endIdx = connection.end();        // These might be getEnd() or end()
+
+                    if (landmark.size() > startIdx && landmark.size() > endIdx) {
+                        canvas.drawLine(
+                                landmark.get(startIdx).x() * imageWidth * scaleFactor,
+                                landmark.get(startIdx).y() * imageHeight * scaleFactor,
+                                landmark.get(endIdx).x() * imageWidth * scaleFactor,
+                                landmark.get(endIdx).y() * imageHeight * scaleFactor,
+                                linePaint
+                        );
+                    }
+                }
+            }
         }
-
-        // 3. Draw Base of Support (BoS) as a green line
-        if (bosStart != null && bosEnd != null) {
-            canvas.drawLine(bosStart.x * width, bosStart.y * height,
-                    bosEnd.x * width, bosEnd.y * height, skeletonPaint);
-        }
-
-        // 4. Draw Text (e.g., "Balanced" or angle values)
-        canvas.drawText("MS Pose Analysis", 50, 100, textPaint);
     }
 
-    private void drawSkeleton(Canvas canvas, int width, int height) {
-        // 1. Define connections (same as Python's POSE_CONNECTIONS)
-        int[][] connections = {
-                {0, 1}, {1, 2}, {2, 3}, {3, 7},    // Face
-                {0, 4}, {4, 5}, {5, 6}, {6, 8},
-                {9, 10},                            // Body center
-                {11, 12}, {11, 23}, {12, 24}, {23, 24}, // Torso
-                {11, 13}, {13, 15},                 // Left arm
-                {12, 14}, {14, 16},                 // Right arm
-                {23, 25}, {25, 27}, {27, 29}, {29, 31}, // Left leg
-                {24, 26}, {26, 28}, {28, 30}, {30, 32}  // Right leg
-        };
+    public void setResults(
+            PoseLandmarkerResult poseLandmarkerResults,
+            int imageHeight,
+            int imageWidth
+    ) {
+        setResults(poseLandmarkerResults, imageHeight, imageWidth, RunningMode.IMAGE);
+    }
 
-        // 2. Draw each connection
-        for (int[] conn : connections) {
-            NormalizedLandmark start = currentLandmarks.get(conn[0]);
-            NormalizedLandmark end = currentLandmarks.get(conn[1]);
+    public void setResults(
+            PoseLandmarkerResult poseLandmarkerResults,
+            int imageHeight,
+            int imageWidth,
+            RunningMode runningMode
+    ) {
+        this.results = poseLandmarkerResults;
+        this.imageHeight = imageHeight;
+        this.imageWidth = imageWidth;
 
-            float startX = start.x() * width;
-            float startY = start.y() * height;
-            float endX = end.x() * width;
-            float endY = end.y() * height;
-
-            canvas.drawLine(startX, startY, endX, endY, skeletonPaint);
+        switch (runningMode) {
+            case IMAGE:
+            case VIDEO:
+                scaleFactor = Math.min(
+                        getWidth() * 1f / imageWidth,
+                        getHeight() * 1f / imageHeight
+                );
+                break;
+            case LIVE_STREAM:
+                // PreviewView is in FILL_START mode. So we need to scale up the
+                // landmarks to match with the size that the captured images will be displayed.
+                scaleFactor = Math.max(
+                        getWidth() * 1f / imageWidth,
+                        getHeight() * 1f / imageHeight
+                );
+                break;
         }
-
-        // 3. Draw landmarks as circles
-        for (NormalizedLandmark landmark : currentLandmarks) {
-            float x = landmark.x() * width;
-            float y = landmark.y() * height;
-            canvas.drawCircle(x, y, 5, dotPaint); // 5px radius
-        }
+        invalidate();
     }
 }

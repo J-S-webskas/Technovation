@@ -1,86 +1,89 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <!-- Camera Preview (Essential) -->
-    <androidx.camera.view.PreviewView
-        android:id="@+id/camera_preview_view"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <!-- Custom View to Draw Pose & Graphics (Essential) -->
-    <com.example.myappication.OverlayView
-        android:id="@+id/pose_overlay_view"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:background="@android:color/transparent"
-        app:layout_constraintBottom_toBottomOf="@id/camera_preview_view"
-        app:layout_constraintEnd_toEndOf="@id/camera_preview_view"
-        app:layout_constraintStart_toStartOf="@id/camera_preview_view"
-        app:layout_constraintTop_toTopOf="@id/camera_preview_view" />
-
-      <!-- Add these to your existing layout -->
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp"
-        android:background="#80000000"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent">
+        android:layout_height="match_parent">
 
-        <!-- Test Status -->
-        <TextView
-            android:id="@+id/tv_test_status"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Ready"
-            android:textColor="@color/white"
-            android:textSize="18sp"
-            android:textStyle="bold"/>
+        <!-- Camera Preview (Essential) -->
+        <androidx.camera.view.PreviewView
+            android:id="@+id/camera_preview_view"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
-        <!-- Test Control Buttons -->
+        <!-- Custom View to Draw Pose & Graphics (Essential) -->
+        <com.example.myappication.OverlayView
+            android:id="@+id/pose_overlay_view"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="@android:color/transparent"
+            app:layout_constraintBottom_toBottomOf="@id/camera_preview_view"
+            app:layout_constraintEnd_toEndOf="@id/camera_preview_view"
+            app:layout_constraintStart_toStartOf="@id/camera_preview_view"
+            app:layout_constraintTop_toTopOf="@id/camera_preview_view" />
+
+          <!-- Add these to your existing layout -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:background="#80000000"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent">
 
-            <Button
-                android:id="@+id/btn_baseline"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Baseline"
-                android:backgroundTint="#008000"/>
-
-            <Button
-                android:id="@+id/btn_dual_task"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Dual Task"
-                android:backgroundTint="#FFFF00"/>
-
-            <Button
-                android:id="@+id/btn_sensory"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Eyes Closed"
-                android:backgroundTint="#FF0000"/>
-
-            <Button
-                android:id="@+id/btn_cancel"
+            <!-- Test Status -->
+            <TextView
+                android:id="@+id/tv_test_status"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="CANCEL"/>
-        </LinearLayout>
-    </LinearLayout>
+                android:text="Ready"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+            <!-- Test Control Buttons -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btn_baseline"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Baseline"
+                    android:backgroundTint="#008000"/>
+
+                <Button
+                    android:id="@+id/btn_dual_task"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Dual Task"
+                    android:backgroundTint="#FFFF00"/>
+
+                <Button
+                    android:id="@+id/btn_sensory"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Eyes Closed"
+                    android:backgroundTint="#FF0000"/>
+
+                <Button
+                    android:id="@+id/btn_cancel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="CANCEL"/>
+            </LinearLayout>
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

@@ -1,8 +1,8 @@
 package com.example.myappication;
 
+import androidx.lifecycle.ViewModelProvider;
+
 import android.Manifest;
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.PointF;
 import android.content.pm.PackageManager;
@@ -58,14 +58,14 @@ public class RecordFragment extends Fragment {
     // Views
     private PreviewView previewView;
     private OverlayView overlayView;
-    private String username;
+    private String username = "123";
 
     // Camera & MediaPipe
     private ExecutorService cameraExecutor;
     private PoseLandmarker poseLandmarker;
 
     // Data Storage
-    private AssessmentData currentAssessment;
+    private AssessmentData currentAssessment = new AssessmentData(username);
     private Calendar baselineTestDate;
     private Calendar dualTaskTestDate;
     private Calendar sensoryAtaxiaTestDate;
@@ -130,7 +130,7 @@ public class RecordFragment extends Fragment {
     //// sets up the model and connects the mediapipe model for creating 3d pose skeleton
     private void setupPoseDetector() {
         // Download pose_landmarker_lite.task from MediaPipe and place it in app/src/main/assets/
-        String modelAssetPath = "pose_landmarker_lite.task";
+        String modelAssetPath = "app/src/main/assets/pose_landmarker_lite.task";
 
         BaseOptions baseOptions = BaseOptions.builder()  // Handles fundamental model loading
                 .setModelAssetPath(modelAssetPath)
@@ -233,9 +233,9 @@ public class RecordFragment extends Fragment {
         PointF bosStart = new PointF(leftHeel.x(), leftHeel.y());
         PointF bosEnd = new PointF(rightHeel.x(), rightHeel.y());
 
-        requireActivity().runOnUiThread(() -> {
-            overlayView.updateLandmarksAndGraphics(landmarks, comPoint, bosStart, bosEnd);
-        });
+//        requireActivity().runOnUiThread(() -> {
+//            overlayView.updateLandmarksAndGraphics(landmarks, comPoint, bosStart, bosEnd);
+//        });
     }
 
     //// Extracts angles only needed for gait into a map (removes facial expression, hands,)
@@ -450,8 +450,8 @@ public class RecordFragment extends Fragment {
 
         Toast.makeText(requireContext(), "Baseline test started - Walk normally for 30 seconds", Toast.LENGTH_SHORT).show();
 
-        autoStopHandler = new Handler(Looper.getMainLooper());
-        autoStopRunnable = new Runnable() {
+        var auto_test_handler = new Handler(Looper.getMainLooper());
+        var auto_test_runner = new Runnable() {
             @Override
             public void run() {
                 if (currentTestType == TestType.BASELINE) {
@@ -462,7 +462,7 @@ public class RecordFragment extends Fragment {
                 }
             }
         };
-        autoStopHandler.postDelayed(autoStopRunnable, BASELINE_DURATION_MS ); // 30 seconds = 30000ms
+        auto_test_handler.postDelayed(auto_test_runner, BASELINE_DURATION_MS ); // 30 seconds = 30000ms
     }
 
     private void startDualTaskTest() {
@@ -557,7 +557,7 @@ public class RecordFragment extends Fragment {
                 comparisons.setDualTaskSpeedChange(speedChange);
             }
         }
-        // TODO: NEED MANREEN'S BALANCE CODE TO CALCULATE BALANCE
+        // TODO: NEED BALANCE
 //        float currentBalance = GaitAnalyzer.calculateBalance(, );
         //TODO: IF HAVE TIME, ADD HIP
         Map<String, Float> stiffnessScores = new HashMap<>();
@@ -654,12 +654,4 @@ public class RecordFragment extends Fragment {
         Toast.makeText(requireContext(), "Baseline test saved. Next test available tomorrow.", Toast.LENGTH_LONG).show();
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        if (poseLandmarker != null) {
-            poseLandmarker.close();
-        }
-        cameraExecutor.shutdown();
-    }
 }

@@ -6,6 +6,12 @@ android {
     namespace = "com.example.myappication"
     compileSdk = 35
 
+    buildFeatures {
+        dataBinding {
+            enable = true  // Correct syntax for Kotlin DSL
+        }
+    }
+
     defaultConfig {
         applicationId = "com.example.myappication"
         minSdk = 24
