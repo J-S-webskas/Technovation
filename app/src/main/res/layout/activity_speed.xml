@@ -89,7 +89,7 @@
         android:layout_height="wrap_content"
         android:id="@+id/speedTV"
         android:textColor="#fff"
-        android:text="Speed: 0.0 km/h"
+        android:text="Speed: 0.0 m/h"
         android:layout_centerHorizontal="true"
         android:textSize="30sp"
         android:textStyle="bold"
@@ -143,7 +143,7 @@
                 android:textSize="12sp"
                 android:textColor="#3344A8"
                 android:gravity="center_horizontal"
-                android:text="km/h"/>
+                android:text="m/h"/>
 
             </LinearLayout>
 
@@ -191,7 +191,7 @@
                     android:textSize="12sp"
                     android:textColor="#3344A8"
                     android:gravity="center_horizontal"
-                    android:text="km/h"/>
+                    android:text="m/h"/>
 
             </LinearLayout>
 
@@ -239,7 +239,7 @@
                     android:textSize="12sp"
                     android:textColor="#3344A8"
                     android:gravity="center_horizontal"
-                    android:text="km/h"/>
+                    android:text="m/h"/>
 
             </LinearLayout>
 
