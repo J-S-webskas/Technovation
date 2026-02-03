@@ -93,7 +93,7 @@ public class speed extends AppCompatActivity implements LocationListener {
         }
 
         resetSpeedRunnable = () -> {
-            speedTV.setText((String.format(Locale.getDefault(), "Speed: %.2f km/h", 0.0f)));
+            speedTV.setText((String.format(Locale.getDefault(), "Speed: %.2f m/h", 0.0f)));
             pointerSpeedometer.speedTo(0);
         };
     }
@@ -135,7 +135,7 @@ public class speed extends AppCompatActivity implements LocationListener {
     @Override
     public void onLocationChanged(@NonNull Location location) {
 
-        float speed = location.getSpeed() * 3.6f;
+        float speed = location.getSpeed() * 0.036f;
         speedList.add(speed);
         pointerSpeedometer.speedTo(speed);
 
@@ -151,7 +151,7 @@ public class speed extends AppCompatActivity implements LocationListener {
 
             previousLocation = location;
 
-            speedTV.setText(String.format(Locale.getDefault(), "Speed: %.2f km/h", speed));
+            speedTV.setText(String.format(Locale.getDefault(), "Speed: %.2f m/h", speed));
             distanceTV.setText(String.format(Locale.getDefault(), "%.2f", totalDistance));
             averageSpeedTV.setText(String.format(Locale.getDefault(), "%.2f", averageSpeed));
             maxSpeedTV.setText(String.format(Locale.getDefault(), "%.2f", maxSpeed));
