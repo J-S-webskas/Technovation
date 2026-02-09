@@ -38,7 +38,7 @@ import java.util.concurrent.ExecutorService;
 
 public class AssessmentData implements Serializable {
     private String sessionId;
-    private Date timestamp;
+    private Date timestamp;  // This should be the time that the user finishes recording, because they can start recording but then cancel
     private String patientId;
     private static final String TAG = "AssessmentStorage";  // For logging
     private static final String ASSESSMENTS_DIR = "assessments"; // Folder name
@@ -83,7 +83,6 @@ public class AssessmentData implements Serializable {
     }
     public String getSessionId() { return sessionId; }
     public Date getTimestamp() { return timestamp; }
-    public String getPatientId() { return patientId; }
 
     public Date getBaselineTestDate() { return baselineTestDate; }
     public void setBaselineTestDate(Date date) {

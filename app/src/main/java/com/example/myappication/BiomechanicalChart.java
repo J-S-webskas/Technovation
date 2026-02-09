@@ -94,7 +94,7 @@ public abstract class BiomechanicalChart {
     }
 
     public String getFormattedLatestDate() {
-        if (!hasAnyData()) return "No Data";
+//        if (!hasAnyData()) return "No Data";
 
         Date latest = getLatestDate();
         SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());

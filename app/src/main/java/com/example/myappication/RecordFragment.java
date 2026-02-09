@@ -33,6 +33,7 @@ import com.google.mediapipe.tasks.vision.core.RunningMode;
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarker;
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarkerResult;
 
+import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,26 +47,44 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/*
+Has:
+Test state management
+Data storage structure
+Logic for saving to AssessmentData
+Calling DataStorageManager.saveAssessment()
+
+Does not have:
+No camera or pose detection  // CameraFragment does this. Thinking of passing all coordinate per frame here to get processed into angles (then discarded)
+No real-time data collection  // CameraFragment does this
+Coordinate-to-angle conversion
+Full integration with GaitAnalyzer
+
+TODO: modify GaitAnalyzer to calculate joint angles from coordinates.
+
+ TODO: WHAT TO DO WITH AUTOSTOPHANDLER?
+ */
+
 public class RecordFragment extends Fragment {
     private Handler autoStopHandler;
     private Runnable autoStopRunnable;
-    private static final int BASELINE_DURATION_MS = 30000; // 30 seconds
-    private static final int DUAL_TASK_DURATION_MS = 30000; // 30 seconds
-    private static final int SENSORY_DURATION_MS = 30000; // 30 seconds
+    private static final int BASELINE_DURATION_MS = 15000; // 15 seconds
+    private static final int DUAL_TASK_DURATION_MS = 15000; // 15 seconds
+    private static final int SENSORY_DURATION_MS = 15000; // 15 seconds
     // Permission Code
     // Views
-    private PreviewView previewView;
-    private OverlayView overlayView;
-    private String username = "123";
+   private String username = "123";
     // Data Storage
     private AssessmentData currentAssessment = new AssessmentData(username);
     private Calendar baselineTestDate;
-    private Map<String, ArrayDeque<Float>> angleHistories;
-    private List<float[]> hipPositions;
+
+    // TODO: There is a data structure, but no data is populated!
+    private Map<String, ArrayDeque<Float>> angleHistories; // Preparing data structures for GaitAnalyzer
+    private List<float[]> hipPositions;  // Preparing data structures for GaitAnalyzer
     private float frameRate = 30f;
 
     // Test tracking
-    private enum TestType { NONE, BASELINE, DUAL_TASK, SENSORY_ATAXIA }
+    private enum TestType { NONE, BASELINE, DUAL_TASK, SENSORY_ATAXIA }  // Manage three test types. Ensure they are performed in order (baseline first, then others).
     private TestType currentTestType = TestType.NONE; // NONE, BASELINE, DUAL_TASK, SENSORY_ATAXIA
     private DualTaskTest activeTest;
     private TestResult baselineResult;
@@ -75,34 +94,11 @@ public class RecordFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_record, container, false);
 
         setupTestControls(view);
-
-        previewView = view.findViewById(R.id.camera_preview_view);
-        overlayView = view.findViewById(R.id.pose_overlay_view);
-
-        // INITIALIZE GAIT ANALYSIS
-        initializeGaitAnalysis();
         return view;
     }
 
-    private void initializeGaitAnalysis() {
-        angleHistories = new HashMap<>();
-        angleHistories.put("left_hip", new ArrayDeque<>(100));
-        angleHistories.put("right_hip", new ArrayDeque<>(100));
-        angleHistories.put("left_knee", new ArrayDeque<>(100));
-        angleHistories.put("right_knee", new ArrayDeque<>(100));
-        angleHistories.put("left_ankle", new ArrayDeque<>(100));
-        angleHistories.put("right_ankle", new ArrayDeque<>(100));
-
-        hipPositions = new ArrayList<>();
-
-        // Reset test state
-        currentTestType = TestType.NONE;
-        baselineResult = null;
-        activeTest = null;
-    }
 
 
-    // In your onCreateView, add test control buttons
     private void setupTestControls(View view) {
         Button btnBaseline = view.findViewById(R.id.btn_baseline);
         Button btnDualTask = view.findViewById(R.id.btn_dual_task);
@@ -133,9 +129,6 @@ public class RecordFragment extends Fragment {
         currentTestType = TestType.NONE;
         activeTest = null;
 
-        // Clear measurement data
-        initializeGaitAnalysis();
-
         String testName = getTestName(cancelledTest);
         Toast.makeText(requireContext(), testName + " test cancelled - results not saved", Toast.LENGTH_SHORT).show();
     }
@@ -162,8 +155,6 @@ public class RecordFragment extends Fragment {
         if (!currentAssessment.canTakeBaselineTest()) {
             Toast.makeText(requireContext(), "Baseline test was already completed for today. Record again tomorrow!", Toast.LENGTH_SHORT).show();
         }
-        // Clear old data
-        initializeGaitAnalysis();
 
         // Start baseline recording
         currentTestType = TestType.BASELINE;
@@ -178,7 +169,11 @@ public class RecordFragment extends Fragment {
                 if (currentTestType == TestType.BASELINE) {
                     Toast.makeText(requireContext(), "Baseline test completed!",
                             Toast.LENGTH_SHORT).show();
-                    saveBaselineResults();
+                    try {
+                        saveBaselineResults();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                     currentTestType = TestType.NONE;
                 }
             }
@@ -221,7 +216,8 @@ public class RecordFragment extends Fragment {
             }
         };
 
-        autoStopHandler.postDelayed(autoStopRunnable, DUAL_TASK_DURATION_MS ); // 30 seconds = 30000ms
+
+        autoStopHandler.postDelayed(autoStopRunnable, DUAL_TASK_DURATION_MS );
     }
 
     private void startSensoryAtaxiaTest() {
@@ -341,7 +337,8 @@ public class RecordFragment extends Fragment {
     }
 
     // TODO: baseline currently only saves muscle stiffness and asymmetry. It does not save speed, balance, or endurance (code needed from Manreen)
-    private void saveBaselineResults() {
+    private void saveBaselineResults() throws IOException {
+        // Calculation speed, stiffness, asymmetry
         float currentSpeed = GaitAnalyzer.calculateWalkingSpeed(hipPositions, frameRate);
         //TODO: IF HAVE TIME, ADD HIP
         Map<String, Float> stiffnessScores = new HashMap<>();
@@ -362,14 +359,14 @@ public class RecordFragment extends Fragment {
 
         Toast.makeText(requireContext(), "Baseline recorded!", Toast.LENGTH_SHORT).show();
 
-        // Save to database
+        // Save to AssessmentData object currentAssessment
         currentAssessment.getBaseline().setWalkingSpeed(currentSpeed);
         currentAssessment.getBaseline().setStiffness(stiffnessScores);
         currentAssessment.getBaseline().setAsymmetry(asymmetryScores);
         currentAssessment.setStatus(AssessmentData.AssessmentStatus.BASELINE_COMPLETED);
         currentAssessment.setBaselineTestDate(new Date());
 
-        // SAVE USING DataStorageManager
+        // Call DataStorageManager to save as a JSON file
         DataStorageManager.saveAssessment(requireContext(), currentAssessment);
 
         Toast.makeText(requireContext(), "Baseline test saved. Next test available tomorrow.", Toast.LENGTH_LONG).show();

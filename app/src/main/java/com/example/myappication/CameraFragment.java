@@ -27,6 +27,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+/*
+Real-time display, without data collection and storage.
+Camera frame -> MediaPipe processing -> Coordinate data -> Draw to screen -> Discard
+ */
+
 public class CameraFragment extends Fragment implements PoseLandmarkerHelper.LandmarkerListener {
 
     private static final String TAG = "Pose Landmarker";
@@ -40,7 +45,7 @@ public class CameraFragment extends Fragment implements PoseLandmarkerHelper.Lan
     private PoseLandmarkerHelper poseLandmarkerHelper;
     private MainViewModel viewModel;
     private Preview preview;
-    private ImageAnalysis imageAnalyzer;
+    private ImageAnalysis imageAnalyzer;  // Only analyze the current frame, do not save.
     private Camera camera;
     private ProcessCameraProvider cameraProvider;
     private int cameraFacing = CameraSelector.LENS_FACING_BACK;
@@ -104,6 +109,7 @@ public class CameraFragment extends Fragment implements PoseLandmarkerHelper.Lan
         }
     }
 
+
     @Override
     public View onCreateView(
             @NonNull LayoutInflater inflater,
@@ -114,12 +120,13 @@ public class CameraFragment extends Fragment implements PoseLandmarkerHelper.Lan
         return _fragmentCameraBinding.getRoot();
     }
 
+    // THIS IS WHERE THE FLOW STARTS: Calls setUpCamera()
     @SuppressLint("MissingPermission")
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Initialize view model
+        // Initialize view model (class)
         viewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
 
         // Initialize our background executor
@@ -134,7 +141,7 @@ public class CameraFragment extends Fragment implements PoseLandmarkerHelper.Lan
             }
         });
 
-        // Create the PoseLandmarkerHelper that will handle the inference
+        // Create the PoseLandmarkerHelper that will handle the inference. backgroundExecutor → new PoseLandmarkerHelper()
         backgroundExecutor.execute(new Runnable() {
             @Override
             public void run() {
@@ -187,6 +194,12 @@ public class CameraFragment extends Fragment implements PoseLandmarkerHelper.Lan
         }, ContextCompat.getMainExecutor(requireContext()));
     }
 
+    /*
+    Preview (4:3 + rotation) <-> ImageAnalyzer (4:3 + rotation)
+    What user sees                 What ML processes
+    Same coordinate system       Same coordinate system
+    overlay.setResults() can correctly map landmarks
+    */
     // Declare and bind preview, capture and analysis use cases
     @SuppressLint("UnsafeOptInUsageError")
     private void bindCameraUseCases() {
@@ -196,17 +209,18 @@ public class CameraFragment extends Fragment implements PoseLandmarkerHelper.Lan
             throw new IllegalStateException("Camera initialization failed.");
         }
 
+        // Front/back camera view
         CameraSelector cameraSelector = new CameraSelector.Builder()
                 .requireLensFacing(cameraFacing)
                 .build();
 
-        // Preview. Only using the 4:3 ratio because this is the closest to our models
+        // Preview. Only using the 4:3 ratio because matches ML model input for mediapipe (rotation-aware)
         preview = new Preview.Builder()
                 .setTargetAspectRatio(AspectRatio.RATIO_4_3)
-                .setTargetRotation(getFragmentCameraBinding().viewFinder.getDisplay().getRotation())
+                .setTargetRotation(getFragmentCameraBinding().viewFinder.getDisplay().getRotation())  //  Syncs preview rotation with device display rotation so image doesn't appear sideways when device rotates
                 .build();
 
-        // ImageAnalysis. Using RGBA 8888 to match how our models work
+        // ImageAnalysis. Using RGBA 8888 to match how our models work. latest frame
         imageAnalyzer = new ImageAnalysis.Builder()
                 .setTargetAspectRatio(AspectRatio.RATIO_4_3)
                 .setTargetRotation(getFragmentCameraBinding().viewFinder.getDisplay().getRotation())
@@ -214,7 +228,7 @@ public class CameraFragment extends Fragment implements PoseLandmarkerHelper.Lan
                 .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
                 .build();
 
-        // The analyzer can then be assigned to the instance
+        // The analyzer can then be assigned to the instance. Attach surface provider
         imageAnalyzer.setAnalyzer(backgroundExecutor, new ImageAnalysis.Analyzer() {
             @Override
             public void analyze(@NonNull ImageProxy image) {
@@ -228,19 +242,24 @@ public class CameraFragment extends Fragment implements PoseLandmarkerHelper.Lan
         try {
             // A variable number of use-cases can be passed here -
             // camera provides access to CameraControl & CameraInfo
+            // Camera starts streaming to both preview and analyzer simultaneously
+            // Automatically pauses/resumes with fragment
             camera = cameraProvider.bindToLifecycle(
                     this, cameraSelector, preview, imageAnalyzer
             );
 
             // Attach the viewfinder's surface provider to preview use case
+            // SurfaceProvider = Interface that provides a drawing surface
             preview.setSurfaceProvider(getFragmentCameraBinding().viewFinder.getSurfaceProvider());
         } catch (Exception exc) {
             Log.e(TAG, "Use case binding failed", exc);
         }
     }
 
+    // Processes raw image
     private void detectPose(ImageProxy imageProxy) {
         if (poseLandmarkerHelper != null) {
+            // MediaPipe processing on background thread
             poseLandmarkerHelper.detectLiveStream(
                     imageProxy,
                     cameraFacing == CameraSelector.LENS_FACING_FRONT
@@ -257,6 +276,7 @@ public class CameraFragment extends Fragment implements PoseLandmarkerHelper.Lan
     }
 
     // Update UI after pose have been detected. Extracts original
+    // Returns normalized [0,1] coordinates
     // image height/width to scale and place the landmarks properly through
     // OverlayView
     @Override
@@ -269,13 +289,17 @@ public class CameraFragment extends Fragment implements PoseLandmarkerHelper.Lan
 
                         // Pass necessary information to OverlayView for drawing on the canvas
                         getFragmentCameraBinding().overlay.setResults(
-                                resultBundle.results.get(0),
+                                resultBundle.results.get(0), // Coordinates of the current frame
                                 resultBundle.inputImageHeight,
                                 resultBundle.inputImageWidth,
                                 RunningMode.LIVE_STREAM
                         );
 
                         // Force a redraw
+                        // Android doesn't automatically redraw when data changes / when the user moves
+                        // Without invalidate(), first pose appears, then nothing updates,
+                        // screen stays frozen with old pose data, new detections happen but aren't shown
+                        // Without it, the landmarks wouldn't appear or update on screen
                         getFragmentCameraBinding().overlay.invalidate();
                     }
                 }

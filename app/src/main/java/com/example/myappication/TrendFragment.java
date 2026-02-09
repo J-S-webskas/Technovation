@@ -10,6 +10,8 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.google.android.material.button.MaterialButtonToggleGroup;
+import com.google.mediapipe.tasks.vision.core.RunningMode;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -73,6 +75,9 @@ public class TrendFragment extends Fragment {
         List<BiomechanicalChart> charts = new ArrayList<>();
 
         // Try to load assessments from storage
+        // TODO: NEED SOME OPTIMIZATION. Only need to loadAllAssessment the first time the user use the app.
+        // TODO: Shouldn't load assessment data everytime the fragment refreshes: Like screen rotates
+        // everytime
         List<AssessmentData> assessments = DataStorageManager.loadAllAssessments(requireContext());
 
         if (assessments == null || assessments.isEmpty()) {
@@ -120,13 +125,15 @@ public class TrendFragment extends Fragment {
     // REAL DATA CHARTS
     private BalanceChart createBalanceChartFromData(List<AssessmentData> assessments) {
         // Extract data from all three test types
-        Map<Date, Float> baselineData = new TreeMap<>(); // TreeMap keeps dates sorted
+        Map<Date, Float> baselineData = new TreeMap<>(); // TreeMap ensures that dates are ordered: important for time series charts.
         Map<Date, Float> dualTaskData = new TreeMap<>();
         Map<Date, Float> sensoryAtaxiaData = new TreeMap<>();
 
         for (AssessmentData assessment : assessments) {
             Date date = assessment.getTimestamp();
 
+            // Data from the three test types is stored separately to display 3 lines in charts.
+            // Check if the test type exists. Check if the score is valid (>0).
             // BASELINE data
             if (assessment.getBaseline() != null && assessment.getBaseline().getBalanceScore() > 0) {
                 baselineData.put(date, assessment.getBaseline().getBalanceScore());
@@ -375,5 +382,6 @@ public class TrendFragment extends Fragment {
         if (value > 0.6) return "Fair";
         return "Poor";
     }
+
 
 }

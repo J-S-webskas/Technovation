@@ -1,11 +1,12 @@
 package com.example.myappication;
 
+import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarkerResult;
+
 import java.util.*;
 // CORE ANALYZER CODE
 
 public class GaitAnalyzer {
 
-    // Calculate muscle stiffness (Java equivalent of Python calculate_muscle_stiffness)
     public static float calculateMuscleStiffness(ArrayDeque<Float> angleHistory,
                                                  String jointName, float frameRate) {
         if (angleHistory.size() < 20) {
@@ -174,5 +175,9 @@ public class GaitAnalyzer {
         } else {
             return sorted.get(size/2);
         }
+    }
+
+    private static void collectCoordinates(List<PoseLandmarkerResult> result) {
+
     }
 }

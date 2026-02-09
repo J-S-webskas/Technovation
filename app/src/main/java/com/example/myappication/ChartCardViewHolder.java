@@ -40,7 +40,7 @@ public class ChartCardViewHolder extends RecyclerView.ViewHolder {
     public ChartCardViewHolder(@NonNull View itemView) {
         super(itemView);
         chartTitle = itemView.findViewById(R.id.chartTitle);
-        chartDate = itemView.findViewById(R.id.chartDate);
+//        chartDate = itemView.findViewById(R.id.chartDate);
         averageValue = itemView.findViewById(R.id.averageValue);
         maxValue = itemView.findViewById(R.id.maxValue);
         lineChart = itemView.findViewById(R.id.lineChart);
@@ -63,7 +63,7 @@ public class ChartCardViewHolder extends RecyclerView.ViewHolder {
     public void bind(BiomechanicalChart chart, String timeRange, BiomechanicalAdapter.OnCardClickListener listener) {
         // Set basic text
         chartTitle.setText(chart.getTitle());
-        chartDate.setText(chart.getFormattedLatestDate());
+//        chartDate.setText(chart.getFormattedLatestDate());
 
         // Prepare data for all three test types
         Map<String, List<Entry>> allData = new LinkedHashMap<>();
@@ -122,15 +122,15 @@ public class ChartCardViewHolder extends RecyclerView.ViewHolder {
         lineChart.setNoDataText("No test data available");
         lineChart.setNoDataTextColor(Color.GRAY);
 
-        // Show empty message
-        if (emptyStateText != null) {
-            emptyStateText.setVisibility(View.VISIBLE);
-            String message = chart.getEmptyMessage();
-            if (message == null || message.isEmpty()) {
-                message = "Start a recording test to see graph!";
-            }
-            emptyStateText.setText(message);
-        }
+        // Show empty message (Probably not needed)
+//        if (emptyStateText != null) {
+//            emptyStateText.setVisibility(View.VISIBLE);
+//            String message = chart.getEmptyMessage();
+//            if (message == null || message.isEmpty()) {
+//                message = "Start a recording test to see graph!";
+//            }
+//            emptyStateText.setText(message);
+//        }
 
         // Update stats to show no data
         averageValue.setText("No data available");

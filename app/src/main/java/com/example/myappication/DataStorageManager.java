@@ -2,6 +2,10 @@ package com.example.myappication;
 
 import android.content.Context;
 import android.util.Log;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -9,28 +13,54 @@ import java.util.List;
 
 public class DataStorageManager {
     private static final String TAG = "DataStorageManager";
-    private static final String FILE_EXTENSION = ".dat";
+    private static final String FILE_EXTENSION = ".json";
 
     /**
-     * Save assessment to internal storage
+     * Save assessment to internal storage:
+     * Only the application can access these files
+     * other applications cannot read or write them
+     * Users need root privileges to access them
+     *
+     *  Sample Json: (for visualization)
+     *  {
+     *   "sessionId": "550e8400-e29b-41d4-a716-446655440000",
+     *   "timestamp": "2024-12-20T10:30:00Z",
+     *   "patientId": "patient_001",
+     *   "baseline": {
+     *     "walkingSpeed": 1.2,
+     *     "balanceScore": 78.5,
+     *     "stiffness": {
+     *       "knee": 45.2,
+     *       "ankle": 32.1
+     *     }
+     *   },
+     *   "dualTask": {
+     *     "walkingSpeed": 0.9,
+     *     // ...
+     *   }
+     * }
+     *
+     *
+     JSON file (local storage)
+     Load directly into memory
+     Display chart
      */
-    public static boolean saveAssessment(Context context, AssessmentData assessment) {
+    public static void saveAssessment(Context context, AssessmentData assessment) throws IOException {
+        // Creating file name
         String filename = "assessment_" + assessment.getSessionId() + FILE_EXTENSION;
+        // Gson instance
+        Gson gson = new GsonBuilder()
+                .setDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")  // ISO 8601 standard Ex. 2024-12-20T10:30:00Z
+                .create();
 
-        try {
-            FileOutputStream fos = context.openFileOutput(filename, Context.MODE_PRIVATE);
-            ObjectOutputStream oos = new ObjectOutputStream(fos);
+        // Convert the object to a JSON string.
+        String json = gson.toJson(assessment);
 
-            oos.writeObject(assessment);
-            oos.close();
-            fos.close();
-
-            Log.d(TAG, "Assessment saved: " + filename);
-            return true;
-
-        } catch (IOException e) {
-            Log.e(TAG, "Error saving assessment: " + e.getMessage());
-            return false;
+        // write file
+        // context.getFilesDir(): Returns the directory of files in the application's internal storage.
+        // Example file path: /data/data/com.example.myappication/files/assessment_550e8400-e29b-41d4-a716-446655440000.json
+        try (FileWriter writer = new FileWriter(new File(context.getFilesDir(), filename))) {
+            writer.write(json);
         }
     }
 
@@ -39,7 +69,7 @@ public class DataStorageManager {
      */
     public static List<AssessmentData> loadAllAssessments(Context context) {
         List<AssessmentData> allAssessments = new ArrayList<>();
-        List<String> assessmentIds = listAssessments(context);
+        List<String> assessmentIds = listAssessments(context);  // Get a list of file names
 
         for (String sessionId : assessmentIds) {
             AssessmentData assessment = loadAssessment(context, sessionId);
@@ -52,7 +82,6 @@ public class DataStorageManager {
         Collections.sort(allAssessments, (a1, a2) ->
                 a2.getTimestamp().compareTo(a1.getTimestamp()));
 
-        Log.d(TAG, "Loaded " + allAssessments.size() + " assessments");
         return allAssessments;
     }
 
@@ -62,20 +91,15 @@ public class DataStorageManager {
     public static AssessmentData loadAssessment(Context context, String sessionId) {
         String filename = "assessment_" + sessionId + FILE_EXTENSION;
 
-        try {
-            FileInputStream fis = context.openFileInput(filename);
-            ObjectInputStream ois = new ObjectInputStream(fis);
+        try (FileReader reader = new FileReader(new File(context.getFilesDir(), filename))) {
+            Gson gson = new GsonBuilder()
+                    .setDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
+                    .create();
 
-            AssessmentData assessment = (AssessmentData) ois.readObject();
+            return gson.fromJson(reader, AssessmentData.class);
 
-            ois.close();
-            fis.close();
-
-            Log.d(TAG, "Assessment loaded: " + sessionId);
-            return assessment;
-
-        } catch (IOException | ClassNotFoundException e) {
-            Log.e(TAG, "Error loading assessment: " + e.getMessage());
+        } catch (IOException e) {
+            Log.e(TAG, "Error loading JSON assessment: " + e.getMessage());
             return null;
         }
     }

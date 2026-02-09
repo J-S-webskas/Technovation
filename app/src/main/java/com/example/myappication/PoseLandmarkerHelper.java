@@ -21,6 +21,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+/*
+Camera frame 1 (t=0ms) -> MediaPipe processing -> returnLivestreamResult(result 1) -> CameraFragment
+Camera frame 2 (t=33ms) -> MediaPipe processing -> returnLivestreamResult(result 2) -> CameraFragment
+etc
+
+Key point: Each call contains only a single frame of data.
+ */
 public class PoseLandmarkerHelper {
     // Constants (converted from Kotlin companion object)
     public static final String TAG = "PoseLandmarkerHelper";
@@ -48,7 +55,6 @@ public class PoseLandmarkerHelper {
 
     private PoseLandmarker poseLandmarker;
 
-    // Constructor matching Kotlin's primary constructor with default values
     public PoseLandmarkerHelper(Context context) {
         this(DEFAULT_POSE_DETECTION_CONFIDENCE,
                 DEFAULT_POSE_TRACKING_CONFIDENCE,
@@ -174,14 +180,15 @@ public class PoseLandmarkerHelper {
         }
         long frameTime = SystemClock.uptimeMillis();
 
+        // Creates empty bitmap matching camera frame dimensions. Bitmap = Digital image representation in Android
         Bitmap bitmapBuffer = Bitmap.createBitmap(
                 imageProxy.getWidth(),
                 imageProxy.getHeight(),
-                Bitmap.Config.ARGB_8888
+                Bitmap.Config.ARGB_8888  // ARGB_8888 = 8 bits per channel (Alpha, Red, Green, Blue) = 32-bit color
         );
 
         imageProxy.getPlanes()[0].getBuffer().rewind();
-        bitmapBuffer.copyPixelsFromBuffer(imageProxy.getPlanes()[0].getBuffer());
+        bitmapBuffer.copyPixelsFromBuffer(imageProxy.getPlanes()[0].getBuffer());  // Copies raw camera data into bitmap. Bitmap becomes the processed image frame for MediaPipe
         imageProxy.close();
 
         Matrix matrix = new Matrix();
@@ -212,7 +219,19 @@ public class PoseLandmarkerHelper {
         }
     }
 
+    // Includes all frames of the video (batch processing) -> for learnings sake analogy: getting menu and letting all dishes come up vs
+    // Real-time processing (stream processing): Take a plate -> Eat -> Take another plate -> Eat (Like eating at a buffet)
+
+    /*
+        inferenceIntervalMs:
+        Purpose: Determines the density of the analyzed video.
+        Example Values:
+        33: Analyze one frame every 33ms ≈ 30fps (High Density)
+        100: Analyze one frame every 100ms ≈ 10fps (Medium Density)
+        1000: Analyze one frame per second (Low Density)
+     */
     public ResultBundle detectVideoFile(Uri videoUri, long inferenceIntervalMs) throws IOException {
+        // Check the running mode: It must be VIDEO mode
         if (runningMode != RunningMode.VIDEO) {
             throw new IllegalArgumentException(
                     "Attempting to call detectVideoFile while not using RunningMode.VIDEO"
@@ -223,45 +242,57 @@ public class PoseLandmarkerHelper {
         boolean didErrorOccurred = false;
 
         MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-        retriever.setDataSource(context, videoUri);
+        retriever.setDataSource(context, videoUri);  // Load video file
+        // Get video duration (milliseconds)
         String durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
         Long videoLengthMs = durationStr != null ? Long.parseLong(durationStr) : null;
 
+        // Get the first frame to determine the video size
         Bitmap firstFrame = retriever.getFrameAtTime(0);
         Integer width = firstFrame != null ? firstFrame.getWidth() : null;
         Integer height = firstFrame != null ? firstFrame.getHeight() : null;
 
+        // Check if the basic information is complete, like video lenght, width, height
         if (videoLengthMs == null || width == null || height == null) {
             retriever.release();
-            return null;
+            return null;  // Unable to process, returns null
         }
 
+        // Prepare the results list and calculate the number of frames.
         List<PoseLandmarkerResult> resultList = new ArrayList<>();
+        // Calculate how many frames need to be read
+        // For example: a 10-second video (10000ms), analyzing one frame every 33ms → 10000/33 ≈ 303 frames
         long numberOfFrameToRead = videoLengthMs / inferenceIntervalMs;
 
+        // Iterate through each frame (by time interval)
         for (long i = 0; i <= numberOfFrameToRead; i++) {
+            // Calculate the timestamp of the current frame
             long timestampMs = i * inferenceIntervalMs;
+            // Extract frames from a video at a specified time
             Bitmap frame = retriever.getFrameAtTime(
-                    timestampMs * 1000,
-                    MediaMetadataRetriever.OPTION_CLOSEST
+                    timestampMs * 1000, // Convert to microseconds
+                    MediaMetadataRetriever.OPTION_CLOSEST // Get the closest frame
             );
 
             if (frame != null) {
+                // Ensure the frame format is ARGB_8888 (the format required by MediaPipe)
                 Bitmap argb8888Frame;
                 if (frame.getConfig() == Bitmap.Config.ARGB_8888) {
                     argb8888Frame = frame;
                 } else {
-                    argb8888Frame = frame.copy(Bitmap.Config.ARGB_8888, false);
+                    argb8888Frame = frame.copy(Bitmap.Config.ARGB_8888, false); // Convert to the correct format
                 }
 
+                // Convert Bitmap to MediaPipe image format
                 MPImage mpImage = new BitmapImageBuilder(argb8888Frame).build();
                 if (poseLandmarker != null) {
+                    // Detect the pose of the current frame
                     PoseLandmarkerResult detectionResult =
                             poseLandmarker.detectForVideo(mpImage, timestampMs);
                     if (detectionResult != null) {
-                        resultList.add(detectionResult);
+                        resultList.add(detectionResult); // Add to result list
                     } else {
-                        didErrorOccurred = true;
+                        didErrorOccurred = true; // Marking error
                         if (poseLandmarkerHelperListener != null) {
                             poseLandmarkerHelperListener.onError(
                                     "ResultBundle could not be returned in detectVideoFile"
@@ -269,7 +300,7 @@ public class PoseLandmarkerHelper {
                         }
                     }
                 }
-            } else {
+            } else {  // Unable to acquire frame, error flagged
                 didErrorOccurred = true;
                 if (poseLandmarkerHelperListener != null) {
                     poseLandmarkerHelperListener.onError(
@@ -279,17 +310,20 @@ public class PoseLandmarkerHelper {
             }
         }
 
-        retriever.release();
+        retriever.release();  // Release video search engine
 
+        // Calculate the average processing time per frame
         long inferenceTimePerFrameMs = (SystemClock.uptimeMillis() - startTime) / numberOfFrameToRead;
 
         if (didErrorOccurred) {
             return null;
         } else {
+            // Returns a ResultBundle containing all frame results.
             return new ResultBundle(resultList, inferenceTimePerFrameMs, height, width);
         }
     }
 
+    // Includes only a single image, assuming it is the mediapipe skeleton image
     public ResultBundle detectImage(Bitmap image) {
         if (runningMode != RunningMode.IMAGE) {
             throw new IllegalArgumentException(
@@ -316,15 +350,29 @@ public class PoseLandmarkerHelper {
         return null;
     }
 
+    // When returnLivestreamResult(PoseLandmarkerResult result, MPImage input) is called by MediaPipe
+    // The result parameter (an object of PoseLandmarkerResult) only stores coordinate for one frame
+    // It can get the list of all the people using the method result.landmarks()
+    // result.landmark:
+    //    [Person 1: 33 landmarks],  // List #1
+    //    [Person 2: 33 landmarks]   // List #2 (if multiple people) etc.
+    //    result.landmarks().get(0)  // Gets the first person
+    //    result.landmarks().get(0).get(0)  // Gets the first person's 0th coordinate, which is the nose
+    // This result object gets added to a List<PoseLandmarkerResult> resultList inside ResultBundle
+    // The ResultBundle is then sent to listener via poseLandmarkerHelperListener.onResults(bundle)
+    // onResults is implemented in the camera fragment, which will extract the coordinates.
+
+    // result only contains the pose detection results for the current frame
+    // Each call uses a new frame with new coordinate data
     private void returnLivestreamResult(PoseLandmarkerResult result, MPImage input) {
         long finishTimeMs = SystemClock.uptimeMillis();
         long inferenceTime = finishTimeMs - result.timestampMs();
 
         if (poseLandmarkerHelperListener != null) {
             List<PoseLandmarkerResult> resultList = new ArrayList<>();
-            resultList.add(result);
-            ResultBundle bundle = new ResultBundle(resultList, inferenceTime, input.getHeight(), input.getWidth());
-            poseLandmarkerHelperListener.onResults(bundle);
+            resultList.add(result);  // Coordinate data of the current frame
+            ResultBundle bundle = new ResultBundle(resultList, inferenceTime, input.getHeight(), input.getWidth());  // input.getHeight() and input.getWidth() get the pixel dimensions of the camera frame/image that was processed.
+            poseLandmarkerHelperListener.onResults(bundle); // onResults is implemented inside of CameraFragment
         }
     }
 
@@ -337,15 +385,35 @@ public class PoseLandmarkerHelper {
     }
 
     // Inner classes for ResultBundle and LandmarkerListener
+    /*
+    Data Structure:
+    ResultBundle {
+    results: [  <- This list contains all frames!
+        PoseLandmarkerResult { <-  Frame 1
+            timestampMs: 0,
+            landmarks: [33 keypoint coordinates]
+        },
+        PoseLandmarkerResult {  <- Frame 2
+            timestampMs: 33,  <-Assuming 30fps
+            landmarks: [33 keypoint coordinates]
+        },
+        PoseLandmarkerResult {  <- Frame 3
+            timestampMs: 67,
+            landmarks: [33 keypoint coordinates]
+        },
+        // ... All frames
+    ]
+}
+     */
     public static class ResultBundle {
-        public List<PoseLandmarkerResult> results;
+        public List<PoseLandmarkerResult> results;  // Contains all the coordinate data from frame
         public long inferenceTime;
         public int inputImageHeight;
         public int inputImageWidth;
 
         public ResultBundle(List<PoseLandmarkerResult> results, long inferenceTime,
                             int inputImageHeight, int inputImageWidth) {
-            this.results = results;
+            this.results = results;  // Store coordinate data
             this.inferenceTime = inferenceTime;
             this.inputImageHeight = inputImageHeight;
             this.inputImageWidth = inputImageWidth;
@@ -355,6 +423,6 @@ public class PoseLandmarkerHelper {
     public interface LandmarkerListener {
         void onError(String error, int errorCode);
         void onError(String error); // Overloaded method
-        void onResults(ResultBundle resultBundle);
+        void onResults(ResultBundle resultBundle);  // Implemented inside of CameraFragment
     }
 }
