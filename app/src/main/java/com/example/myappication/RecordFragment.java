@@ -48,21 +48,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /*
-Has:
-Test state management
-Data storage structure
-Logic for saving to AssessmentData
+Saving to AssessmentData
 Calling DataStorageManager.saveAssessment()
 
-Does not have:
-No camera or pose detection  // CameraFragment does this. Thinking of passing all coordinate per frame here to get processed into angles (then discarded)
-No real-time data collection  // CameraFragment does this
-Coordinate-to-angle conversion
-Full integration with GaitAnalyzer
-
-TODO: modify GaitAnalyzer to calculate joint angles from coordinates.
-
- TODO: WHAT TO DO WITH AUTOSTOPHANDLER?
+TODO: GaitAnalyzer should be changed to averageRectifiedJerk & called after a test is saved/ended
+TODO: WHAT TO DO WITH AUTOSTOPHANDLER?
  */
 
 public class RecordFragment extends Fragment {
@@ -78,9 +68,8 @@ public class RecordFragment extends Fragment {
     private AssessmentData currentAssessment = new AssessmentData(username);
     private Calendar baselineTestDate;
 
-    // TODO: There is a data structure, but no data is populated!
     private Map<String, ArrayDeque<Float>> angleHistories; // Preparing data structures for GaitAnalyzer
-    private List<float[]> hipPositions;  // Preparing data structures for GaitAnalyzer
+    private List<float[]> hipPositions;  // Preparing data structures for GaitAnalyzer (not used?)
     private float frameRate = 30f;
 
     // Test tracking
@@ -96,8 +85,6 @@ public class RecordFragment extends Fragment {
         setupTestControls(view);
         return view;
     }
-
-
 
     private void setupTestControls(View view) {
         Button btnBaseline = view.findViewById(R.id.btn_baseline);
@@ -146,15 +133,18 @@ public class RecordFragment extends Fragment {
                 return "Test";
         }
     }
-    // Add angle per frame from PoseLandmarkerHelper to Map<String, ArrayDeque<Float>> angleHistories
+ 
+    // Add angle per frame from PoseLandmarkerHelper to Map<String, ArrayDeque<Float>> angleHistories. Called from PoseLandmarkerHlper
     public static void addAnglePerFrame(String name, float angle) {
-        ArrayDeque<float> angles = angleHistories.get(name);
+        // Gets reference to the ArrayDeque inside of angleHistories
+        ArrayDeque<Float> angles = angleHistories.get(name);
         if (angles == null) {
-            angles = new ArrayDeque<>(Arrays.asList(angle));
-            angleHistory.put(name, angle);
+            // The angleHistories's arrayDeque is created if there isn't anything
+            angles = new ArrayDeque<>();
+            // Store the reference IN the map (key = name, value = deque)
+            angleHistories.put(name, angles);
         }
-
-        angleHistory.put(name, angles)
+        angles.add(angle);  // updates the deque that angleHistory.get(name) references
     }
 
     private void startBaselineTest() {
@@ -270,9 +260,8 @@ public class RecordFragment extends Fragment {
     }
 
     private void saveOtherTestResults(TestType currentTestType) {
-        // Calculate metrics (same as baseline
-        // TODO: DECIDE IF WE KEEP MY IMPLEMENTATION OR MANREEN'S
-        float currentSpeed = GaitAnalyzer.calculateWalkingSpeed(hipPositions, frameRate);
+        // Calculate metrics (same as baseline)
+        float currentSpeed = 0.0f;  // TODO: INTEGRATE WITH MANREEN'S CODE
         // Calculate walking speed comparison with baseline
         TestComparisons comparisons = currentAssessment.getComparisons();
         if (currentAssessment.getBaseline().getWalkingSpeed() > 0) {
@@ -284,51 +273,43 @@ public class RecordFragment extends Fragment {
                 comparisons.setDualTaskSpeedChange(speedChange);
             }
         }
+     
         // TODO: NEED BALANCE
-//        float currentBalance = GaitAnalyzer.calculateBalance(, );
-        //TODO: IF HAVE TIME, ADD HIP
-        Map<String, Float> stiffnessScores = new HashMap<>();
+     
+        Map<String, Float> avgRecJerkScore = new HashMap<>();
         for (String joint : Arrays.asList("left_knee", "right_knee")) {
-            float stiffness = GaitAnalyzer.calculateMuscleStiffness(
-                    angleHistories.get(joint), joint, frameRate
+            float avgRecJ = GaitAnalyzer.calculateAverageRectifiedJerk(
+                    angleHistories.get(joint), frameRate
             );
-            stiffnessScores.put(joint, stiffness);
+            avgRecJerkScore.put(joint, avgRecJ);
         }
         if (!currentAssessment.getBaseline().getStiffness().isEmpty()) {
-            float baselineStiffnessForKnee = currentAssessment.getBaseline().getStiffness().get("knee");
-            float stiffnessChangeForKnee = (stiffnessScores.get("knee") - baselineStiffnessForKnee) / baselineStiffnessForKnee * 100;
+            float baselineARJForKnee = currentAssessment.getBaseline().getStiffness().get("knee");
+            float ARJChangeForKnee = (avgRecJerkScore.get("knee") - baselineARJForKnee) / baselineARJForKnee * 100;
             if (currentTestType == TestType.SENSORY_ATAXIA) {
-                comparisons.setSensoryAtaxiaStiffnessChange(stiffnessChangeForKnee);
+                comparisons.setSensoryAtaxiaStiffnessChange(ARJChangeForKnee);
             } else {
-                comparisons.setDualTaskStiffnessChange(stiffnessChangeForKnee);
+                comparisons.setDualTaskStiffnessChange(ARJChangeForKnee);
             }
         }
-        // Calculates asymmetry for knee
-        //TODO: IF HAVE TIME, ADD HIP
-        Map<String, Float> asymmetryScores = new HashMap<>();
-        float kneeAsymmetry = GaitAnalyzer.calculateAsymmetry(
-                angleHistories.get("left_knee"),
-                angleHistories.get("right_knee"),
-                "knee"
-        );
 //        if (!currentAssessment.getBaseline().getAsymmetry().isEmpty()) {
-//            float baselineStiffnessForKnee = currentAssessment.getBaseline().getStiffness().get("knee");
-//            float stiffnessChangeForKnee = (stiffnessScores.get("knee") - baselineStiffnessForKnee) / baselineStiffnessForKnee * 100;
+//            float baselineARJForKnee = currentAssessment.getBaseline().getStiffness().get("knee");
+//            float ARJChangeForKnee = (avgRecJerkScore.get("knee") - baselineARJForKnee) / baselineARJForKnee * 100;
 //            if (currentTestType == TestType.SENSORY_ATAXIA) {
-//                comparisons.setSensoryAtaxiaStiffnessChange(stiffnessChangeForKnee);
+//                comparisons.setSensoryAtaxiaStiffnessChange(ARJChangeForKnee);
 //            } else {
-//                comparisons.setDualTaskStiffnessChange(stiffnessChangeForKnee);
+//                comparisons.setDualTaskStiffnessChange(ARJChangeForKnee);
 //            }
 //        }
 
         // Save to currentAssessment's SENSORY_ATAXIA & DUAL_TASK section. IS THIS NECESSARY?
 //        if (currentTestType == TestType.SENSORY_ATAXIA) {
 //            currentAssessment.getSensoryAtaxia().setWalkingSpeed(currentSpeed);
-//            currentAssessment.getSensoryAtaxia().setStiffness(stiffnessScores);
+//            currentAssessment.getSensoryAtaxia().setStiffness(avgRecJerkScore);
 //            currentAssessment.getSensoryAtaxia().setAsymmetry(asymmetryScores);
 //        } else {
 //            currentAssessment.getDualTask().setWalkingSpeed(currentSpeed);
-//            currentAssessment.getDualTask().setStiffness(stiffnessScores);
+//            currentAssessment.getDualTask().setStiffness(avgRecJerkScore);
 //            currentAssessment.getDualTask().setAsymmetry(asymmetryScores);
 //        }
 
@@ -346,33 +327,24 @@ public class RecordFragment extends Fragment {
 //        }
     }
 
-    // TODO: baseline currently only saves muscle stiffness and asymmetry. It does not save speed, balance, or endurance (code needed from Manreen)
+    // TODO: baseline currently only saves ARJ. It does not save speed, balance, or endurance (code needed from Manreen)
     private void saveBaselineResults() throws IOException {
-        // Calculation speed, stiffness, asymmetry
-        float currentSpeed = GaitAnalyzer.calculateWalkingSpeed(hipPositions, frameRate);
+        // Calculation speed, stiffness
+        float currentSpeed = 0.0f; // NEED MANREEN'S CODE
         //TODO: IF HAVE TIME, ADD HIP
-        Map<String, Float> stiffnessScores = new HashMap<>();
+        Map<String, Float> avgRecJerkScore = new HashMap<>();
         for (String joint : Arrays.asList("left_knee", "right_knee")) {
-            float stiffness = GaitAnalyzer.calculateMuscleStiffness(
+            float avgRecJ = GaitAnalyzer.calculateAverageRectifiedJerk(
                     angleHistories.get(joint), joint, frameRate
             );
-            stiffnessScores.put(joint, stiffness);
+            avgRecJerkScore.put(joint, avgRecJ);
         }
-        //TODO: IF HAVE TIME, ADD HIP
-        Map<String, Float> asymmetryScores = new HashMap<>();
-        float kneeAsymmetry = GaitAnalyzer.calculateAsymmetry(
-                angleHistories.get("left_knee"),
-                angleHistories.get("right_knee"),
-                "knee"
-        );
-        asymmetryScores.put("knee", kneeAsymmetry);
 
         Toast.makeText(requireContext(), "Baseline recorded!", Toast.LENGTH_SHORT).show();
 
         // Save to AssessmentData object currentAssessment
         currentAssessment.getBaseline().setWalkingSpeed(currentSpeed);
-        currentAssessment.getBaseline().setStiffness(stiffnessScores);
-        currentAssessment.getBaseline().setAsymmetry(asymmetryScores);
+        currentAssessment.getBaseline().setStiffness(avgRecJerkScore);
         currentAssessment.setStatus(AssessmentData.AssessmentStatus.BASELINE_COMPLETED);
         currentAssessment.setBaselineTestDate(new Date());
 
@@ -381,5 +353,4 @@ public class RecordFragment extends Fragment {
 
         Toast.makeText(requireContext(), "Baseline test saved. Next test available tomorrow.", Toast.LENGTH_LONG).show();
     }
-
 }
