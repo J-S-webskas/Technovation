@@ -146,6 +146,13 @@ public class RecordFragment extends Fragment {
                 return "Test";
         }
     }
+    // Add angle per frame from PoseLandmarkerHelper to Map<String, ArrayDeque<Float>> angleHistories
+    public static void addAnglePerFrame(String name, float angle) {
+        ArrayDeque<float> angle = angleHistories.get(name);
+        if (angle == null) {
+         
+        }
+    }
 
     private void startBaselineTest() {
         if (currentTestType != TestType.NONE) { // If the user clicks another test while this test is running, discard this test data
