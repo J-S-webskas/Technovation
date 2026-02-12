@@ -148,10 +148,13 @@ public class RecordFragment extends Fragment {
     }
     // Add angle per frame from PoseLandmarkerHelper to Map<String, ArrayDeque<Float>> angleHistories
     public static void addAnglePerFrame(String name, float angle) {
-        ArrayDeque<float> angle = angleHistories.get(name);
-        if (angle == null) {
-         
+        ArrayDeque<float> angles = angleHistories.get(name);
+        if (angles == null) {
+            angles = new ArrayDeque<>(Arrays.asList(angle));
+            angleHistory.put(name, angle);
         }
+
+        angleHistory.put(name, angles)
     }
 
     private void startBaselineTest() {
