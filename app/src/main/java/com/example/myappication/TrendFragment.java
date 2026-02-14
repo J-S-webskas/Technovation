@@ -19,8 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-// COMMIT # 2
-
 public class TrendFragment extends Fragment {
 
     private RecyclerView recyclerView;
