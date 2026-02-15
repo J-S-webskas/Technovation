@@ -1,7 +1,4 @@
 package com.example.myappication;
-import android.content.Context;
-
-import com.google.gson.Gson;
 
 import java.io.Serializable;
 import java.util.Calendar;
@@ -24,17 +21,13 @@ import java.util.UUID;
     // ... hundreds more frames
   ],
   "scores": {                                          // Final 4 clinical scores
-    "spasticity": 45.2,
+    "ARJ": 45.2,
     "balance": 78.5,
     "walkingSpeed": 1.2,
     "endurance": 65.0
   }
 }
  */
-import java.io.Serializable;
-import java.util.Date;
-import java.util.UUID;
-import java.util.concurrent.ExecutorService;
 
 public class AssessmentData implements Serializable {
     private String sessionId;
@@ -204,7 +197,7 @@ class JointAngleData implements Serializable {
 class BaselineAssessment implements Serializable {
     private JointAngleData jointAngles;       // joint angles
     private float walkingSpeed;               // m/sec
-    private Map<String, Float> stiffness;     // Joint stiffness scores 0-100
+    private Map<String, Float> ARJ;
     private Map<String, Float> asymmetry;     // Joint asymmetry %
     private float balanceScore;               // Calculated balance
     private float enduranceScore;             // Baseline endurance
@@ -214,8 +207,8 @@ class BaselineAssessment implements Serializable {
         return balanceScore;
     }
 
-    public Map<String, Float> getStiffness() {
-        return stiffness;
+    public Map<String, Float> getARJ() {
+        return ARJ;
     }
 
     public float getEnduranceScore() {
@@ -230,12 +223,17 @@ class BaselineAssessment implements Serializable {
         this.walkingSpeed = currentSpeed;
     }
 
-    public void setStiffness(Map<String, Float> stiffnessScores) {
-        this.stiffness = stiffnessScores;
+    public void setARJ(Map<String, Float> ARJScores) {
+        this.ARJ = ARJScores;
     }
 
     public void setAsymmetry(Map<String, Float> asymmetryScores) {
         this.asymmetry = asymmetryScores;
+    }
+    // TODO: (MANREEN) WRITE GETTERS/SETTERS FOR BALANCE, AND ENDURANCE IN BASELINE ASSESSMENT, DUALTASK ASSESSMENT, AND SENSORY ATAXIA ASSESSMENT
+    // TODO: (MANREEN) DECIDE WHICH TYPE OF INSTANCE VARIABLE YOU WANT TO STORE THESE CALCULATED RESULTS IN TEMPORARILY
+    public void setBalanceScore () {
+
     }
 }
 
@@ -243,7 +241,7 @@ class BaselineAssessment implements Serializable {
 class DualTaskAssessment implements Serializable {
     private JointAngleData jointAngles;
     private float walkingSpeed;
-    private Map<String, Float> stiffness;
+    private Map<String, Float> ARJ;
     private Map<String, Float> asymmetry;
     private float balanceScore;
     private float enduranceScore;
@@ -251,8 +249,8 @@ class DualTaskAssessment implements Serializable {
     public float getBalanceScore() {
         return balanceScore;
     }
-    public Map<String, Float> getStiffness() {
-        return stiffness;
+    public Map<String, Float> getARJ() {
+        return ARJ;
     }
     public float getEnduranceScore() {
         return enduranceScore;
@@ -267,7 +265,7 @@ class DualTaskAssessment implements Serializable {
 class SensoryAtaxiaAssessment implements Serializable {
     private JointAngleData jointAngles;
     private float walkingSpeed;
-    private Map<String, Float> stiffness;
+    private Map<String, Float> ARJ;
     private Map<String, Float> asymmetry;
     private float balanceScore;
     private float enduranceScore;
@@ -276,8 +274,8 @@ class SensoryAtaxiaAssessment implements Serializable {
     public float getBalanceScore() {
         return balanceScore;
     }
-    public Map<String, Float> getStiffness() {
-        return stiffness;
+    public Map<String, Float> getARJ() {
+        return ARJ;
     }
     public float getEnduranceScore() {
         return enduranceScore;
@@ -288,8 +286,8 @@ class SensoryAtaxiaAssessment implements Serializable {
     public void setWalkingSpeed(float walkingSpeed) {
         this.walkingSpeed = walkingSpeed;
     }
-    public void setStiffness(Map<String, Float> stiffness) {
-        this.stiffness = stiffness;
+    public void setARJ(Map<String, Float> ARJ) {
+        this.ARJ = ARJ;
     }
     public void setAsymmetry (Map<String, Float> asymmetry) {
         this.asymmetry = asymmetry;
@@ -300,13 +298,13 @@ class TestComparisons implements Serializable {
     // DUAL TASK vs BASELINE changes
     private float dualTaskSpeedChange;       // e.g., -25% (slower with counting)
     private float dualTaskBalanceChange;     // e.g., -15% (worse balance with counting)
-    private float dualTaskStiffnessChange;   // e.g., +30% (more stiff with counting)
+    private float dualTaskARJChange;   // e.g., +30% (more stiff with counting)
     private float dualTaskEnduranceChange; // e.g., -50% (much worse balance eyes closed)
 
     // SENSORY ATAXIA vs BASELINE changes
     private float sensoryAtaxiaSpeedChange;  // e.g., -40% (much slower eyes closed)
     private float sensoryAtaxiaBalanceChange; // e.g., -50% (much worse balance eyes closed)
-    private float sensoryAtaxiaStiffnessChange; // e.g., -50% (much worse balance eyes closed)
+    private float sensoryAtaxiaARJChange; // e.g., -50% (much worse balance eyes closed)
     private float sensoryAtaxiaEnduranceChange; // e.g., -50% (much worse balance eyes closed)
 
     // ASYMMETRY SCORES
@@ -326,8 +324,8 @@ class TestComparisons implements Serializable {
         this.sensoryAtaxiaBalanceChange = value;
     }
 
-    public void setDualTaskStiffnessChange(float value) {
-        this.dualTaskStiffnessChange = value;
+    public void setDualTaskARJChange(float value) {
+        this.dualTaskARJChange = value;
     }
 
     public void setSensoryAtaxiaSpeedChange(float value) {
@@ -339,8 +337,8 @@ class TestComparisons implements Serializable {
     }
 
     // Passes in knee only for now
-    public void setSensoryAtaxiaStiffnessChange(float value) {
-        this.sensoryAtaxiaStiffnessChange = value;
+    public void setSensoryAtaxiaARJChange(float value) {
+        this.sensoryAtaxiaARJChange = value;
     }
 
     public void setSensoryAtaxiaEnduranceChange(float value) {

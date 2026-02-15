@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
             } else if (itemId == R.id.nav_trend) {
                 fragment = new TrendFragment();
             } else if (itemId == R.id.nav_record) {
-                fragment = new CameraFragment();
+                fragment = new RecordFragment();
             } else if (itemId == R.id.nav_report) {
                 fragment = new ReportFragment();
             }

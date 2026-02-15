@@ -40,7 +40,6 @@ public class ChartCardViewHolder extends RecyclerView.ViewHolder {
     public ChartCardViewHolder(@NonNull View itemView) {
         super(itemView);
         chartTitle = itemView.findViewById(R.id.chartTitle);
-//        chartDate = itemView.findViewById(R.id.chartDate);
         averageValue = itemView.findViewById(R.id.averageValue);
         maxValue = itemView.findViewById(R.id.maxValue);
         lineChart = itemView.findViewById(R.id.lineChart);

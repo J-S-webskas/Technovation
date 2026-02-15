@@ -11,6 +11,7 @@ import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.ImageProxy;
 import com.google.mediapipe.framework.image.BitmapImageBuilder;
 import com.google.mediapipe.framework.image.MPImage;
+import com.google.mediapipe.tasks.components.containers.NormalizedLandmark;
 import com.google.mediapipe.tasks.core.BaseOptions;
 import com.google.mediapipe.tasks.core.Delegate;
 import com.google.mediapipe.tasks.vision.core.RunningMode;
@@ -43,6 +44,7 @@ public class PoseLandmarkerHelper {
     public static final int MODEL_POSE_LANDMARKER_LITE = 1;
     public static final int MODEL_POSE_LANDMARKER_HEAVY = 2;
 
+    long lastTimestamp = 0;  // The timestamp of the previous frame that was processed (time interval between consecutive frames)
     // Properties
     public float minPoseDetectionConfidence;
     public float minPoseTrackingConfidence;
@@ -363,12 +365,21 @@ public class PoseLandmarkerHelper {
     // onResults is implemented in the camera fragment, which will extract the coordinates.
 
     // result only contains the pose detection results for the current frame
-    // Each call uses a new frame with new coordinate data
-    // result.timestampMs() - The timestamp of this frame (used to calculate inference time)
-    // Each frame has a unique timestamp, typically the time it was captured
+    // Each call uses a new frame with new coordinate data1
     private void returnLivestreamResult(PoseLandmarkerResult result, MPImage input) {
-        long finishTimeMs = SystemClock.uptimeMillis();
-        long inferenceTime = finishTimeMs - result.timestampMs();
+        long finishTimeMs = SystemClock.uptimeMillis();  // The current system time in milliseconds when processing of the frame finished
+        long inferenceTime = finishTimeMs - result.timestampMs();  // The time it took to process the frame (Measures performance)
+
+        long currentTimestamp = result.timestampMs();  // The starting time of the current frame being processed
+        float actualFrameRate = 0;
+
+        if (lastTimestamp != 0) {
+            long frameIntervalMs = currentTimestamp - lastTimestamp;
+            actualFrameRate = 1000f / frameIntervalMs; // Calculate actual FPS
+        }
+        lastTimestamp = currentTimestamp;
+
+        RecordFragment.setFrameRate(actualFrameRate);
 
         if (poseLandmarkerHelperListener != null) {
             List<PoseLandmarkerResult> resultList = new ArrayList<>();
@@ -376,27 +387,20 @@ public class PoseLandmarkerHelper {
             ResultBundle bundle = new ResultBundle(resultList, inferenceTime, input.getHeight(), input.getWidth());  // input.getHeight() and input.getWidth() get the pixel dimensions of the camera frame/image that was processed.
             poseLandmarkerHelperListener.onResults(bundle); // onResults is implemented inside of CameraFragment
             // Get the first (and only) PoseLandmarkerResult from the list
-            List<NormalizedLandmark> landmarks = bundle.results.get(0).landmarks();  // person's 33 landmarks all in here
+            List<NormalizedLandmark> landmarks = bundle.results.get(0).landmarks().get(0);  // first person's 33 landmarks all in here
+            // TODO: EXTRACT THE ANGLES NEEDED OF BALANCE (MANREEN)
             float right_knee = calculateAngle(landmarks.get(24), landmarks.get(26), landmarks.get(28));
             float left_knee = calculateAngle(landmarks.get(23), landmarks.get(25), landmarks.get(27));
-            RecordFragment.addAnglePerFrame("right_knee", right_knee);
-            RecordFragment.addAnglePerFrame("left_knee", left_knee);
-            // Landmarks before 11 are all on the face, which is not needed. 11 = left shoulder. 32 and 33 is left and right foot/toe
-            // for (int i = 11; i < 31; i++) {
-            //     // From 23, about hip. 17-23 is hand landmarks
-            //     if (i == 17) {
-            //         i = 23;
-            //     }
-            //     calculateAngle(landmarks.get(i))
-            // }
+            RecordFragment.addAnglePerFrame("right_knee", actualFrameRate);
+            RecordFragment.addAnglePerFrame("left_knee", actualFrameRate);
         }
     }
 
     // Calculate angle between three points per one frame in time
-    public static float calculateAngle(float[] a, float[] b, float[] c) {
-        // Convert to vectors
-        float[] ba = {a[0] - b[0], a[1] - b[1]};
-        float[] bc = {c[0] - b[0], c[1] - b[1]};
+    public static float calculateAngle(NormalizedLandmark a, NormalizedLandmark b, NormalizedLandmark c) {
+        // Convert to vectors using x and y coordinates
+        float[] ba = {a.x() - b.x(), a.y() - b.y()};
+        float[] bc = {c.x() - b.x(), c.y() - b.y()};
 
         // Dot product
         float dot = ba[0]*bc[0] + ba[1]*bc[1];
@@ -413,7 +417,7 @@ public class PoseLandmarkerHelper {
         // // Ensure angle is between 0-180
         // return Math.abs(angleDeg) <= 180 ? Math.abs(angleDeg) : 360 - Math.abs(angleDeg);
     }
-    
+
     private void returnLivestreamError(RuntimeException error) {
         if (poseLandmarkerHelperListener != null) {
             poseLandmarkerHelperListener.onError(
@@ -422,8 +426,29 @@ public class PoseLandmarkerHelper {
         }
     }
 
+    // Inner classes for ResultBundle and LandmarkerListener
+    /*
+    Data Structure:
+    ResultBundle {
+    results: [  <- This list contains all frames!
+        PoseLandmarkerResult { <-  Frame 1
+            timestampMs: 0,
+            landmarks: [33 keypoint coordinates]
+        },
+        PoseLandmarkerResult {  <- Frame 2
+            timestampMs: 33,  <-Assuming 30fps
+            landmarks: [33 keypoint coordinates]
+        },
+        PoseLandmarkerResult {  <- Frame 3
+            timestampMs: 67,
+            landmarks: [33 keypoint coordinates]
+        },
+        // ... All frames
+    ]
+}
+     */
     public static class ResultBundle {
-        public List<PoseLandmarkerResult> results;
+        public List<PoseLandmarkerResult> results;  // Contains all the coordinate data from frame
         public long inferenceTime;
         public int inputImageHeight;
         public int inputImageWidth;

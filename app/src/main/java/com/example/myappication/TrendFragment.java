@@ -10,7 +10,6 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.google.android.material.button.MaterialButtonToggleGroup;
-import com.google.mediapipe.tasks.vision.core.RunningMode;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -18,6 +17,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+
+
+/*
+When user clicks on TrendFragment, onCreateView automatically triggers the fragment to load
+ */
 
 public class TrendFragment extends Fragment {
 
@@ -77,7 +81,7 @@ public class TrendFragment extends Fragment {
         // Try to load assessments from storage
         // TODO: NEED SOME OPTIMIZATION. Only need to loadAllAssessment the first time the user use the app.
         // TODO: Shouldn't load assessment data everytime the fragment refreshes: Like screen rotates
-        // everytime
+
         List<AssessmentData> assessments = DataStorageManager.loadAllAssessments(requireContext());
 
         if (assessments == null || assessments.isEmpty()) {
@@ -89,7 +93,7 @@ public class TrendFragment extends Fragment {
         } else {
             // HAS DATA - Create charts from real data
             charts.add(createBalanceChartFromData(assessments));
-            charts.add(createSpasticityChartFromData(assessments));
+            charts.add(createARJChartFromData(assessments));
             charts.add(createEnduranceChartFromData(assessments));
             charts.add(createWalkingSpeedChartFromData(assessments));
         }
@@ -176,7 +180,7 @@ public class TrendFragment extends Fragment {
         return chart;
     }
 
-    private MuscleStiffnessChart createSpasticityChartFromData(List<AssessmentData> assessments) {
+    private MuscleStiffnessChart createARJChartFromData(List<AssessmentData> assessments) {
         Map<Date, Float> baselineData = new TreeMap<>();
         Map<Date, Float> dualTaskData = new TreeMap<>();
         Map<Date, Float> sensoryAtaxiaData = new TreeMap<>();
@@ -185,24 +189,24 @@ public class TrendFragment extends Fragment {
             Date date = assessment.getTimestamp();
 
             // BASELINE data - calculate average stiffness
-            if (assessment.getBaseline() != null && assessment.getBaseline().getStiffness() != null) {
-                float avgStiffness = calculateAverageStiffness(assessment.getBaseline().getStiffness());
+            if (assessment.getBaseline() != null && assessment.getBaseline().getARJ() != null) {
+                float avgStiffness = calculateARV(assessment.getBaseline().getARJ());
                 if (avgStiffness > 0) {
                     baselineData.put(date, avgStiffness);
                 }
             }
 
             // DUAL TASK data
-            if (assessment.getDualTask() != null && assessment.getDualTask().getStiffness() != null) {
-                float avgStiffness = calculateAverageStiffness(assessment.getDualTask().getStiffness());
+            if (assessment.getDualTask() != null && assessment.getDualTask().getARJ() != null) {
+                float avgStiffness = calculateARV(assessment.getDualTask().getARJ());
                 if (avgStiffness > 0) {
                     dualTaskData.put(date, avgStiffness);
                 }
             }
 
             // SENSORY ATAXIA data
-            if (assessment.getSensoryAtaxia() != null && assessment.getSensoryAtaxia().getStiffness() != null) {
-                float avgStiffness = calculateAverageStiffness(assessment.getSensoryAtaxia().getStiffness());
+            if (assessment.getSensoryAtaxia() != null && assessment.getSensoryAtaxia().getARJ() != null) {
+                float avgStiffness = calculateARV(assessment.getSensoryAtaxia().getARJ());
                 if (avgStiffness > 0) {
                     sensoryAtaxiaData.put(date, avgStiffness);
                 }
@@ -332,8 +336,8 @@ public class TrendFragment extends Fragment {
         return chart;
     }
 
-    // Helper methods for calculating averages
-    private float calculateAverageStiffness(Map<String, Float> stiffnessMap) {
+    // caculateAverageRectifiedJerk averages the left and right knee separately, and then in trend fragment, this method averages left + right knee together to create a single ARJ value to plot on the graph
+    private float calculateARV(Map<String, Float> stiffnessMap) {
         if (stiffnessMap == null || stiffnessMap.isEmpty()) {
             return 0f;
         }
@@ -382,6 +386,4 @@ public class TrendFragment extends Fragment {
         if (value > 0.6) return "Fair";
         return "Poor";
     }
-
-
 }

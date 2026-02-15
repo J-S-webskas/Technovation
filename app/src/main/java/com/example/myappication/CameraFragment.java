@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -50,7 +51,6 @@ public class CameraFragment extends Fragment implements PoseLandmarkerHelper.Lan
     private ProcessCameraProvider cameraProvider;
     private int cameraFacing = CameraSelector.LENS_FACING_BACK;
 
-    /** Blocking ML operations are performed using this executor */
     private ExecutorService backgroundExecutor;
 
     @Override
@@ -132,6 +132,14 @@ public class CameraFragment extends Fragment implements PoseLandmarkerHelper.Lan
         // Initialize our background executor
         backgroundExecutor = Executors.newSingleThreadExecutor();
 
+        Button btnCancel = view.findViewById(R.id.btn_cancel);
+        RecordFragment recordFragment = (RecordFragment) requireActivity()
+                .getSupportFragmentManager()
+                .findFragmentById(R.id.fragment_container);
+        btnCancel.setOnClickListener(v -> {
+            stopCamera();
+            recordFragment.stopCurrentTestAndDiscardData();});
+
         // Wait for the views to be properly laid out
         getFragmentCameraBinding().viewFinder.post(new Runnable() {
             @Override
@@ -174,6 +182,35 @@ public class CameraFragment extends Fragment implements PoseLandmarkerHelper.Lan
             });
             getFragmentCameraBinding().overlay.clear();
         }
+    }
+
+    public void stopCamera() {
+        Log.d(TAG, "Stopping camera...");
+
+        // 1. Unbind camera use cases
+        if (cameraProvider != null) {
+            cameraProvider.unbindAll();
+            cameraProvider = null;
+        }
+
+        // 2. Clear pose landmarker
+        if (poseLandmarkerHelper != null) {
+            poseLandmarkerHelper.clearPoseLandmarker();
+            poseLandmarkerHelper = null;
+        }
+
+        // 3. Clear overlay
+        if (_fragmentCameraBinding != null && _fragmentCameraBinding.overlay != null) {
+            _fragmentCameraBinding.overlay.clear();
+            _fragmentCameraBinding.overlay.invalidate();
+        }
+
+        // 4. Shutdown executor (if you want to completely stop)
+        if (backgroundExecutor != null && !backgroundExecutor.isShutdown()) {
+            backgroundExecutor.shutdown();
+        }
+
+        Log.d(TAG, "Camera stopped");
     }
 
     // Initialize CameraX, and prepare to bind the camera use cases

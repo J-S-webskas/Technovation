@@ -1,60 +1,34 @@
 package com.example.myappication;
 
-import androidx.lifecycle.ViewModelProvider;
-
-import android.Manifest;
-import android.graphics.Bitmap;
-import android.graphics.PointF;
-import android.content.pm.PackageManager;
+import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 
-import androidx.camera.core.*;
-import androidx.camera.lifecycle.ProcessCameraProvider;
-import androidx.camera.view.PreviewView;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
+import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
 
-import android.util.Size;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.Toast;
 
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.mediapipe.framework.image.BitmapImageBuilder;
-import com.google.mediapipe.tasks.components.containers.NormalizedLandmark;
-import com.google.mediapipe.tasks.core.BaseOptions;
-import com.google.mediapipe.tasks.vision.core.RunningMode;
-import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarker;
-import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarkerResult;
-
 import java.io.IOException;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
-import com.google.mediapipe.framework.image.MPImage;
 
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /*
 Saving to AssessmentData
 Calling DataStorageManager.saveAssessment()
 
-TODO: GaitAnalyzer should be changed to averageRectifiedJerk & called after a test is saved/ended
 TODO: WHAT TO DO WITH AUTOSTOPHANDLER?
  */
-
 public class RecordFragment extends Fragment {
     private Handler autoStopHandler;
     private Runnable autoStopRunnable;
@@ -64,13 +38,13 @@ public class RecordFragment extends Fragment {
     // Permission Code
     // Views
    private String username = "123";
+   private static float frameRate = 0;
     // Data Storage
     private AssessmentData currentAssessment = new AssessmentData(username);
     private Calendar baselineTestDate;
 
-    private Map<String, ArrayDeque<Float>> angleHistories; // Preparing data structures for GaitAnalyzer
-    private List<float[]> hipPositions;  // Preparing data structures for GaitAnalyzer (not used?)
-    private float frameRate = 30f;
+    // TODO: (MANREEN) GUIDELINE: CREATE OWN INSTANCE VARIABLE TO STORE THE ANGLE FOR BALANCE ETC
+    private static Map<String, ArrayDeque<Float>> angleHistories = new HashMap<>(); // stores knee angles for one recording session at a time.
 
     // Test tracking
     private enum TestType { NONE, BASELINE, DUAL_TASK, SENSORY_ATAXIA }  // Manage three test types. Ensure they are performed in order (baseline first, then others).
@@ -87,53 +61,19 @@ public class RecordFragment extends Fragment {
     }
 
     private void setupTestControls(View view) {
-        Button btnBaseline = view.findViewById(R.id.btn_baseline);
-        Button btnDualTask = view.findViewById(R.id.btn_dual_task);
-        Button btnSensory = view.findViewById(R.id.btn_sensory);
-        Button btnCancel = view.findViewById(R.id.btn_cancel);
+        CardView btnBaseline = view.findViewById(R.id.btn_baseline);
+        CardView btnDualTask = view.findViewById(R.id.btn_dual_task);
+        CardView btnSensory = view.findViewById(R.id.btn_sensory);
+        CardView btnSpeed = view.findViewById(R.id.btn_walking_speed_and_endurance);
 
         btnBaseline.setOnClickListener(v -> startBaselineTest());
         btnDualTask.setOnClickListener(v -> startDualTaskTest());
         btnSensory.setOnClickListener(v -> startSensoryAtaxiaTest());
-        btnCancel.setOnClickListener(v -> stopCurrentTestAndDiscardData());
+        // TODO: SPEED ON CLICK LISTENER
     }
 
-    private void stopCurrentTestAndDiscardData() {
-        if (currentTestType == TestType.NONE) {
-            Toast.makeText(requireContext(), "No test running", Toast.LENGTH_SHORT).show();
-            return;
-        }
+    // TODO: (MANREEN) GUIDELINE: CREATE OWN METHOD FOR ADDING THESE ANGLES FROM POSELANDMARKERHELPER TO INSTANCE VARIABLE
 
-        // Cancel the auto-stop timer
-        if (autoStopHandler != null && autoStopRunnable != null) {
-            autoStopHandler.removeCallbacks(autoStopRunnable);
-            autoStopHandler = null;
-            autoStopRunnable = null;
-        }
-
-        // Clear test state
-        TestType cancelledTest = currentTestType;
-        currentTestType = TestType.NONE;
-        activeTest = null;
-
-        String testName = getTestName(cancelledTest);
-        Toast.makeText(requireContext(), testName + " test cancelled - results not saved", Toast.LENGTH_SHORT).show();
-    }
-
-    // Helper method
-    private String getTestName(TestType testType) {
-        switch (testType) {
-            case BASELINE:
-                return "Baseline";
-            case DUAL_TASK:
-                return "Dual task";
-            case SENSORY_ATAXIA:
-                return "Sensory ataxia";
-            default:
-                return "Test";
-        }
-    }
- 
     // Add angle per frame from PoseLandmarkerHelper to Map<String, ArrayDeque<Float>> angleHistories. Called from PoseLandmarkerHlper
     public static void addAnglePerFrame(String name, float angle) {
         // Gets reference to the ArrayDeque inside of angleHistories
@@ -146,6 +86,49 @@ public class RecordFragment extends Fragment {
         }
         angles.add(angle);  // updates the deque that angleHistory.get(name) references
     }
+    public void stopCurrentTestAndDiscardData() {
+        if (currentTestType == TestType.NONE) {
+            Toast.makeText(requireContext(), "No test running", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Cancel the auto-stop timer
+        if (autoStopHandler != null && autoStopRunnable != null) {
+            autoStopHandler.removeCallbacks(autoStopRunnable);
+            autoStopHandler = null;
+            autoStopRunnable = null;
+        }
+        CameraFragment cameraFragment = (CameraFragment) requireActivity()
+                .getSupportFragmentManager()
+                .findFragmentById(R.id.fragment_container);
+        cameraFragment.stopCamera();
+        // Clear test state
+        TestType cancelledTest = currentTestType;
+        currentTestType = TestType.NONE;
+        activeTest = null;
+
+        if (angleHistories != null) {
+            angleHistories.clear();
+        }
+
+        String testName = getTestName(cancelledTest);
+        requireActivity().getSupportFragmentManager().popBackStack();
+        Toast.makeText(requireContext(), testName + " test cancelled - results not saved", Toast.LENGTH_SHORT).show();
+    }
+
+    // Helper method
+    private static String getTestName(TestType testType) {
+        switch (testType) {
+            case BASELINE:
+                return "Baseline";
+            case DUAL_TASK:
+                return "Dual task";
+            case SENSORY_ATAXIA:
+                return "Sensory ataxia";
+            default:
+                return "Test";
+        }
+    }
 
     private void startBaselineTest() {
         if (currentTestType != TestType.NONE) { // If the user clicks another test while this test is running, discard this test data
@@ -156,6 +139,7 @@ public class RecordFragment extends Fragment {
             Toast.makeText(requireContext(), "Baseline test was already completed for today. Record again tomorrow!", Toast.LENGTH_SHORT).show();
         }
 
+        // TODO: CALL CAMERA
         // Start baseline recording
         currentTestType = TestType.BASELINE;
         baselineTestDate = Calendar.getInstance();
@@ -167,10 +151,18 @@ public class RecordFragment extends Fragment {
             @Override
             public void run() {
                 if (currentTestType == TestType.BASELINE) {
-                    Toast.makeText(requireContext(), "Baseline test completed!",
-                            Toast.LENGTH_SHORT).show();
                     try {
                         saveBaselineResults();
+
+                        CameraFragment cameraFragment = (CameraFragment) requireActivity()
+                                .getSupportFragmentManager()
+                                .findFragmentById(R.id.fragment_container);
+                        cameraFragment.stopCamera();
+
+                        requireActivity().getSupportFragmentManager().popBackStack();
+
+                        Toast.makeText(requireContext(), "Baseline test completed!",
+                                Toast.LENGTH_SHORT).show();
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -196,6 +188,7 @@ public class RecordFragment extends Fragment {
             Toast.makeText(requireContext(), "Dual task test was already completed for today. Record again tomorrow!", Toast.LENGTH_SHORT).show();
         }
 
+        // TODO: CALL CAMERA
         // Create dual task test
         activeTest = new DualTaskTest(baselineResult);
         activeTest.startTest();
@@ -208,15 +201,22 @@ public class RecordFragment extends Fragment {
             @Override
             public void run() {
                 if (currentTestType == TestType.DUAL_TASK) {
+                    saveOtherTestResults(currentTestType);
+
+                    CameraFragment cameraFragment = (CameraFragment) requireActivity()
+                            .getSupportFragmentManager()
+                            .findFragmentById(R.id.fragment_container);
+                    cameraFragment.stopCamera();
+
+                    requireActivity().getSupportFragmentManager().popBackStack();
+
                     Toast.makeText(requireContext(), "Dual task test completed!",
                             Toast.LENGTH_SHORT).show();
-                    saveOtherTestResults(currentTestType);
+
                     currentTestType = TestType.NONE;
                 }
             }
         };
-
-
         autoStopHandler.postDelayed(autoStopRunnable, DUAL_TASK_DURATION_MS );
     }
 
@@ -235,6 +235,7 @@ public class RecordFragment extends Fragment {
             Toast.makeText(requireContext(), "Sensory ataxia test was already completed for today. Record again tomorrow!", Toast.LENGTH_SHORT).show();
         }
 
+        // TODO: CALL CAMERA
         // Create sensory ataxia test
         activeTest = new DualTaskTest(baselineResult);
         activeTest.startTest();
@@ -247,9 +248,18 @@ public class RecordFragment extends Fragment {
             @Override
             public void run() {
                 if (currentTestType == TestType.SENSORY_ATAXIA) {
+                    saveOtherTestResults(currentTestType);
+
+                    CameraFragment cameraFragment = (CameraFragment) requireActivity()
+                            .getSupportFragmentManager()
+                            .findFragmentById(R.id.fragment_container);
+                    cameraFragment.stopCamera();
+
+                    requireActivity().getSupportFragmentManager().popBackStack();
+
                     Toast.makeText(requireContext(), "Sensory ataxia test completed!",
                             Toast.LENGTH_SHORT).show();
-                    saveOtherTestResults(currentTestType);
+
                     currentTestType = TestType.NONE;
                 }
             }
@@ -259,9 +269,13 @@ public class RecordFragment extends Fragment {
         currentAssessment.setSensoryAtaxiaTestDate(new Date());
     }
 
+    public static void setFrameRate(float fps) {
+        frameRate = fps;
+    }
+
     private void saveOtherTestResults(TestType currentTestType) {
-        // Calculate metrics (same as baseline)
-        float currentSpeed = 0.0f;  // TODO: INTEGRATE WITH MANREEN'S CODE
+        // Calculate metrics (same as baseline
+        float currentSpeed = 0.0f;
         // Calculate walking speed comparison with baseline
         TestComparisons comparisons = currentAssessment.getComparisons();
         if (currentAssessment.getBaseline().getWalkingSpeed() > 0) {
@@ -273,43 +287,43 @@ public class RecordFragment extends Fragment {
                 comparisons.setDualTaskSpeedChange(speedChange);
             }
         }
-     
-        // TODO: NEED BALANCE
-     
-        Map<String, Float> avgRecJerkScore = new HashMap<>();
+//        float currentBalance = GaitAnalyzer.calculateBalance(, );
+        Map<String, Float> ARJScores = new HashMap<>();
         for (String joint : Arrays.asList("left_knee", "right_knee")) {
-            float avgRecJ = GaitAnalyzer.calculateAverageRectifiedJerk(
+            float ARJ = AverageRectifiedJerk.calculateAverageRectifiedJerk(
                     angleHistories.get(joint), frameRate
             );
-            avgRecJerkScore.put(joint, avgRecJ);
+            ARJScores.put(joint, ARJ);
         }
-        if (!currentAssessment.getBaseline().getStiffness().isEmpty()) {
-            float baselineARJForKnee = currentAssessment.getBaseline().getStiffness().get("knee");
-            float ARJChangeForKnee = (avgRecJerkScore.get("knee") - baselineARJForKnee) / baselineARJForKnee * 100;
+        // TODO: (MANREEN) GUIDELINE: CALL PYTHON CODE WITH THE INSTANCE VARIABLE CONTAINING THE DATA INTO ITS PARAMETER, GET THE RESULT, PASS IT INTO A VARIABLE OR SOMETHING, AND STORE THAT IN CURRENT ASSESSMENT.GETBASELINE().SETBALANCE() OR SETENDURANCE()
+        if (!currentAssessment.getBaseline().getARJ().isEmpty()) {
+            float baselineARJForKnee = currentAssessment.getBaseline().getARJ().get("knee");
+            float stiffnessChangeForKnee = (ARJScores.get("knee") - baselineARJForKnee) / baselineARJForKnee * 100;
             if (currentTestType == TestType.SENSORY_ATAXIA) {
-                comparisons.setSensoryAtaxiaStiffnessChange(ARJChangeForKnee);
+                comparisons.setSensoryAtaxiaARJChange(stiffnessChangeForKnee);
             } else {
-                comparisons.setDualTaskStiffnessChange(ARJChangeForKnee);
+                comparisons.setDualTaskARJChange(stiffnessChangeForKnee);
             }
         }
+
 //        if (!currentAssessment.getBaseline().getAsymmetry().isEmpty()) {
-//            float baselineARJForKnee = currentAssessment.getBaseline().getStiffness().get("knee");
-//            float ARJChangeForKnee = (avgRecJerkScore.get("knee") - baselineARJForKnee) / baselineARJForKnee * 100;
+//            float baselineStiffnessForKnee = currentAssessment.getBaseline().getStiffness().get("knee");
+//            float stiffnessChangeForKnee = (ARJScores.get("knee") - baselineStiffnessForKnee) / baselineStiffnessForKnee * 100;
 //            if (currentTestType == TestType.SENSORY_ATAXIA) {
-//                comparisons.setSensoryAtaxiaStiffnessChange(ARJChangeForKnee);
+//                comparisons.setSensoryAtaxiaStiffnessChange(stiffnessChangeForKnee);
 //            } else {
-//                comparisons.setDualTaskStiffnessChange(ARJChangeForKnee);
+//                comparisons.setDualTaskStiffnessChange(stiffnessChangeForKnee);
 //            }
 //        }
 
         // Save to currentAssessment's SENSORY_ATAXIA & DUAL_TASK section. IS THIS NECESSARY?
 //        if (currentTestType == TestType.SENSORY_ATAXIA) {
 //            currentAssessment.getSensoryAtaxia().setWalkingSpeed(currentSpeed);
-//            currentAssessment.getSensoryAtaxia().setStiffness(avgRecJerkScore);
+//            currentAssessment.getSensoryAtaxia().setStiffness(ARJScores);
 //            currentAssessment.getSensoryAtaxia().setAsymmetry(asymmetryScores);
 //        } else {
 //            currentAssessment.getDualTask().setWalkingSpeed(currentSpeed);
-//            currentAssessment.getDualTask().setStiffness(avgRecJerkScore);
+//            currentAssessment.getDualTask().setStiffness(ARJScores);
 //            currentAssessment.getDualTask().setAsymmetry(asymmetryScores);
 //        }
 
@@ -325,32 +339,52 @@ public class RecordFragment extends Fragment {
 //            float EnduranceChange = ((currentEndurance - baselineEndurance) / baselineEndurance) * 100;
 //            comparisons.setSensoryAtaxiaEnduranceChange(enduranceChange);
 //        }
+        if (angleHistories != null) {
+            angleHistories.clear();
+        }
+
+        //TODO: (JENNY) ADD THE CURRENTASSESSMENT OBJEC TO INTERNAL STORAGE
+
+//        currentAssessment.getBaseline().setWalkingSpeed(currentSpeed);
+//        // TODO: ADD METHODS SET BALANCE AND SET ENDURANCE IN ASSESSMENT DATA (MANREEN)
+//        currentAssessment.getBaseline().setARJ(ARJScores);
+//        currentAssessment.setStatus(AssessmentData.AssessmentStatus.BASELINE_COMPLETED);
+//        currentAssessment.setBaselineTestDate(new Date());
+//
+//        // Call DataStorageManager to save as a JSON file
+//        DataStorageManager.saveAssessment(requireContext(), currentAssessment);
+
     }
 
     // TODO: baseline currently only saves ARJ. It does not save speed, balance, or endurance (code needed from Manreen)
     private void saveBaselineResults() throws IOException {
-        // Calculation speed, stiffness
-        float currentSpeed = 0.0f; // NEED MANREEN'S CODE
-        //TODO: IF HAVE TIME, ADD HIP
-        Map<String, Float> avgRecJerkScore = new HashMap<>();
+        // Calculation speed, ARJ, asymmetry
+        float currentSpeed = 0.0f;
+        Map<String, Float> ARJScores = new HashMap<>();
         for (String joint : Arrays.asList("left_knee", "right_knee")) {
-            float avgRecJ = GaitAnalyzer.calculateAverageRectifiedJerk(
-                    angleHistories.get(joint), joint, frameRate
+            float arj = AverageRectifiedJerk.calculateAverageRectifiedJerk(
+                    angleHistories.get(joint), frameRate
             );
-            avgRecJerkScore.put(joint, avgRecJ);
+            ARJScores.put(joint, arj);
         }
 
         Toast.makeText(requireContext(), "Baseline recorded!", Toast.LENGTH_SHORT).show();
 
         // Save to AssessmentData object currentAssessment
         currentAssessment.getBaseline().setWalkingSpeed(currentSpeed);
-        currentAssessment.getBaseline().setStiffness(avgRecJerkScore);
+        // TODO: ADD METHODS SET BALANCE AND SET ENDURANCE IN ASSESSMENT DATA (MANREEN)
+        currentAssessment.getBaseline().setARJ(ARJScores);
         currentAssessment.setStatus(AssessmentData.AssessmentStatus.BASELINE_COMPLETED);
         currentAssessment.setBaselineTestDate(new Date());
 
         // Call DataStorageManager to save as a JSON file
         DataStorageManager.saveAssessment(requireContext(), currentAssessment);
 
+        if (angleHistories != null) {
+            angleHistories.clear();
+        }
+
         Toast.makeText(requireContext(), "Baseline test saved. Next test available tomorrow.", Toast.LENGTH_LONG).show();
     }
+
 }
