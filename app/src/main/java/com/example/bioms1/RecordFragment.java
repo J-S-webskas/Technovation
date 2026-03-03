@@ -5,6 +5,7 @@ import static com.example.myappication.Speed.currentSpeed;
 import static com.example.myappication.Speed.totalDistance;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -80,6 +81,10 @@ public class RecordFragment extends Fragment {
         btnDualTask.setOnClickListener(v -> startDualTaskTest());
         btnSensory.setOnClickListener(v -> startSensoryAtaxiaTest());
         // TODO: SPEED ON CLICK LISTENER
+        btnSpeed.setOnClickListener(v -> {
+            Intent intent = new Intent(requireContext(), Speed.class);
+            startActivity(intent);
+        });
     }
 
     // TODO: (MANREEN) GUIDELINE: CREATE OWN METHOD FOR ADDING THESE ANGLES FROM POSELANDMARKERHELPER TO INSTANCE VARIABLE - Done

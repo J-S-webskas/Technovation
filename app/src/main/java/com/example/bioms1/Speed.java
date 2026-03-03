@@ -8,75 +8,56 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.widget.Button;
+import android.widget.TextView;
+import android.widget.Toast;
 
-//import com.github.anastr.speedviewlib.PointerSpeedometer;
-import com.google.android.material.snackbar.Snackbar;
-
-//import androidx.activity.EdgeToEdge;
-import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-
-import android.os.Handler;
-import android.view.View;
-import android.view.WindowInsets;
-import android.widget.TextView;
-import android.widget.Toast;
-
-import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
-//import androidx.navigation.NavController;
-//import androidx.navigation.Navigation;
-//import androidx.navigation.ui.AppBarConfiguration;
-//import androidx.navigation.ui.NavigationUI;
-//
-//import com.example.myappication.databinding.ActivitySpeedBinding;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-// Java File for distance & speed calculations
-
 public class Speed extends AppCompatActivity implements LocationListener {
 
-    public static float currentSpeed;
+    public static float currentSpeed = 0.0f;
+    public static float totalDistance = 0.0f;
+    public static float finalDistance = 0.0f;
+
     private TextView localityTV, speedTV, averageSpeedTV, maxSpeedTV, distanceTV;
     private LocationManager locationManager;
-    private final Handler handler = new Handler();
-    private Runnable resetSpeedRunnable;
-//    private PointerSpeedometer pointerSpeedometer;
-    private float maxSpeed = 0.0f;
-    static float totalDistance = 0.0f;
-    public static float finalDistance  = 0.0f;
-
     private Location previousLocation;
+
+    private float maxSpeed = 0.0f;
     private final ArrayList<Float> speedList = new ArrayList<>();
-    private final ActivityResultLauncher<String> activityResultLauncher = registerForActivityResult(new ActivityResultContracts.RequestPermission(), new ActivityResultCallback<Boolean>() {
-        @Override
-        public void onActivityResult(Boolean o) {
-            if (o) {
-                startLocationUpdates();
-            }
-        }
-    });
+
+    private Handler startHandler = new Handler();
+    private Runnable startRunnable;
+
+    // Permission launcher
+    private final ActivityResultLauncher<String> permissionLauncher =
+            registerForActivityResult(
+                    new ActivityResultContracts.RequestPermission(),
+                    isGranted -> {
+                        if (isGranted) {
+                            startLocationUpdates();
+                        } else {
+                            Toast.makeText(this,
+                                    "Location permission is required for speed test",
+                                    Toast.LENGTH_LONG).show();
+                        }
+                    });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate((savedInstanceState));
-//        EdgeToEdge.enable(this);
+        super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_speed);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
 
         localityTV = findViewById(R.id.localityTV);
         speedTV = findViewById(R.id.speedTV);
@@ -84,36 +65,60 @@ public class Speed extends AppCompatActivity implements LocationListener {
         maxSpeedTV = findViewById(R.id.maxSpeedTV);
         distanceTV = findViewById(R.id.distanceTV);
 
-//        pointerSpeedometer = findViewById(R.id.speedometer);
-//        pointerSpeedometer.setMaxSpeed(200);
+        Button cancelBtn = findViewById(R.id.cancelBtn);
+        Button restartBtn = findViewById(R.id.restartBtn);
+        Button saveBtn = findViewById(R.id.saveBtn);
 
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
-//        if (ContextCompat.checkSelfPermission(speed.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-//            activityResultLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION);
-//        } else {
-//            startLocationUpdates();
-//        }
+        Toast.makeText(this,
+                "Speed test will start in 10 seconds...",
+                Toast.LENGTH_SHORT).show();
 
-        resetSpeedRunnable = () -> {
-            speedTV.setText((String.format(Locale.getDefault(), "Speed: %.2f km/h", 0.0f)));
-//            pointerSpeedometer.speedTo(0);
-        };
+        startRunnable = this::checkPermissionAndStart;
+        startHandler.postDelayed(startRunnable, 10000);
+
+        cancelBtn.setOnClickListener(v -> cancelTest());
+        restartBtn.setOnClickListener(v -> restartTest());
+        saveBtn.setOnClickListener(v -> saveAndExit());
+    }
+
+    private void checkPermissionAndStart() {
+
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED) {
+
+            startLocationUpdates();
+
+        } else {
+            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION);
+        }
+
+        Toast.makeText(this,
+                "Speed test started!",
+                Toast.LENGTH_SHORT).show();
     }
 
     private void startLocationUpdates() {
         try {
-//            if (ContextCompat.checkSelfPermission(speed.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-//                return;
-//            }
-//            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000, 1, this);
-        } catch (Exception e) {
-            Toast.makeText(this, "There was an error while listening for location updates", Toast.LENGTH_SHORT).show();
-            e.printStackTrace();
+            locationManager.requestLocationUpdates(
+                    LocationManager.GPS_PROVIDER,
+                    2000,
+                    1,
+                    this
+            );
+        } catch (SecurityException e) {
+            Toast.makeText(this,
+                    "Location permission missing",
+                    Toast.LENGTH_SHORT).show();
         }
     }
 
     private float calculateAverageSpeed() {
+        if (speedList.isEmpty()) return 0.0f;
+
         float sum = 0.0f;
         for (float s : speedList) {
             sum += s;
@@ -121,54 +126,130 @@ public class Speed extends AppCompatActivity implements LocationListener {
         return sum / speedList.size();
     }
 
-    private String getLocalityFromLcation(Location location) {
+    private String getLocalityFromLocation(Location location) {
         Geocoder geocoder = new Geocoder(this, Locale.getDefault());
         try {
-            List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+            List<Address> addresses =
+                    geocoder.getFromLocation(
+                            location.getLatitude(),
+                            location.getLongitude(),
+                            1);
+
             if (addresses != null && !addresses.isEmpty()) {
-                Address address = addresses.get(0);
-                return address.getLocality();
+                return addresses.get(0).getLocality();
             }
+
         } catch (IOException e) {
             e.printStackTrace();
         }
+
         return "Unknown Location";
     }
 
     @Override
     public void onLocationChanged(@NonNull Location location) {
 
-        float speed = location.getSpeed() * 3.6f; // km/h
+        float speed = location.getSpeed() * 3.6f;
         speedList.add(speed);
-//        pointerSpeedometer.speedTo(speed);
 
         if (speed > maxSpeed) {
             maxSpeed = speed;
         }
 
-        float averageSpeed = calculateAverageSpeed();
-
-        float currentSpeed = averageSpeed;
+        currentSpeed = calculateAverageSpeed();
 
         if (previousLocation != null) {
             float distance = previousLocation.distanceTo(location);
             totalDistance += distance / 1000.0f;
-
-            previousLocation = location;
-
-            speedTV.setText(String.format(Locale.getDefault(), "Speed: %.2f km/h", speed));
-            distanceTV.setText(String.format(Locale.getDefault(), "%.2f", totalDistance));
-            averageSpeedTV.setText(String.format(Locale.getDefault(), "%.2f", averageSpeed));
-            maxSpeedTV.setText(String.format(Locale.getDefault(), "%.2f", maxSpeed));
-
-            String locality = getLocalityFromLcation(location);
-            localityTV.setText(String.format(Locale.getDefault(), "%s", locality));
-
-            handler.removeCallbacks(resetSpeedRunnable);
-            handler.postDelayed(resetSpeedRunnable, 3000);
         }
 
-        finalDistance = totalDistance;
+        previousLocation = location;
 
+        speedTV.setText(String.format(Locale.getDefault(),
+                "Speed: %.2f km/h", speed));
+
+        averageSpeedTV.setText(String.format(Locale.getDefault(),
+                "%.2f", currentSpeed));
+
+        maxSpeedTV.setText(String.format(Locale.getDefault(),
+                "%.2f", maxSpeed));
+
+        distanceTV.setText(String.format(Locale.getDefault(),
+                "%.2f km", totalDistance));
+
+        localityTV.setText(getLocalityFromLocation(location));
+
+        finalDistance = totalDistance;
+    }
+
+    /* ================================
+       CLEAR EVERYTHING COMPLETELY
+       ================================ */
+    private void clearAllStoredData() {
+
+        // Stop GPS updates
+        locationManager.removeUpdates(this);
+        startHandler.removeCallbacks(startRunnable);
+
+        // Reset static variables
+        currentSpeed = 0.0f;
+        totalDistance = 0.0f;
+        finalDistance = 0.0f;
+
+        // Reset instance variables
+        maxSpeed = 0.0f;
+        speedList.clear();
+        previousLocation = null;
+
+        // Reset UI
+        speedTV.setText("Speed: 0.0 km/h");
+        averageSpeedTV.setText("0");
+        maxSpeedTV.setText("0");
+        distanceTV.setText("0");
+        localityTV.setText("Location");
+    }
+
+    private void cancelTest() {
+
+        clearAllStoredData();
+
+        Toast.makeText(this,
+                "Speed test canceled",
+                Toast.LENGTH_SHORT).show();
+
+        finish(); // Navigate back to RecordFragment
+    }
+
+    private void restartTest() {
+
+        clearAllStoredData();
+
+        Toast.makeText(this,
+                "Restarting in 10 seconds...",
+                Toast.LENGTH_SHORT).show();
+
+        startRunnable = this::checkPermissionAndStart;
+        startHandler.postDelayed(startRunnable, 10000);
+    }
+
+    private void saveAndExit() {
+
+            // Stop location updates but keep clear stored values
+            locationManager.removeUpdates(this);
+            startHandler.removeCallbacks(startRunnable);
+
+            Toast.makeText(this,
+                    "Speed data saved",
+                    Toast.LENGTH_SHORT).show();
+
+            // Go back to RecordFragment
+            finish();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        locationManager.removeUpdates(this);
+        startHandler.removeCallbacks(startRunnable);
     }
 }
