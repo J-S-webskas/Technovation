@@ -8,7 +8,7 @@ public class MuscleStiffnessChart extends BiomechanicalChart {
     // Normal: 5-15cm variability, >25cm = abnormal
 
     public MuscleStiffnessChart(int id, String title, Map<Date, Float> historicalData, String condition) {
-        super(id, "Muscle Stiffness", "Intensity", historicalData);
+        super(id, "Spasticity", "Intensity", historicalData);
     }
 
 //    @Override public String getTitle() { return "Joint Spasticity"; }

@@ -10,27 +10,18 @@
         tools:context=".MainActivity"
         android:background="@android:color/white">
 
-        <com.google.android.material.appbar.AppBarLayout
+        <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/topBar"
             android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:fitsSystemWindows="true"
+            android:layout_height="48dp"
+            android:background="@color/design_default_color_secondary"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
-
-            <TextView
-                android:id="@+id/Title"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:background="@color/design_default_color_secondary"
-                android:paddingVertical="5dp"
-                android:text="Sessions"
-                android:textAlignment="center"
-                android:textColor="@color/white"
-                android:textSize="32sp"
-                android:textStyle="bold" />
-
-        </com.google.android.material.appbar.AppBarLayout>
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:title="BioMS"
+            app:titleTextColor="@color/white"
+            app:titleTextAppearance="@style/BoldToolbarTitle"
+            app:titleCentered="true" />
 
 
         <ScrollView
@@ -59,6 +50,7 @@
                     android:text="Select a test to record"
                     android:textSize="20dp"
                     android:textStyle="bold"
+                    android:textColor="#FF0000"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />

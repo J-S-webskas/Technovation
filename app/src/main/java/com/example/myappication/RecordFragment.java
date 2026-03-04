@@ -139,7 +139,13 @@ public class RecordFragment extends Fragment {
             Toast.makeText(requireContext(), "Baseline test was already completed for today. Record again tomorrow!", Toast.LENGTH_SHORT).show();
         }
 
-        // TODO: CALL CAMERA
+        /// CALL CAMERA
+        requireActivity().getSupportFragmentManager()
+                .beginTransaction()
+                .add(R.id.fragment_container, new CameraFragment())
+                .addToBackStack("camera")
+                .commit();
+
         // Start baseline recording
         currentTestType = TestType.BASELINE;
         baselineTestDate = Calendar.getInstance();
