@@ -1,4 +1,4 @@
-package com.example.myappication;
+package com.example.bioms1;
 
 import static androidx.core.content.ContentProviderCompat.requireContext;
 import static com.example.myappication.Speed.currentSpeed;

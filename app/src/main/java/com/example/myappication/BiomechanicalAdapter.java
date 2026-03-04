@@ -55,15 +55,34 @@ public class BiomechanicalAdapter extends RecyclerView.Adapter<ChartCardViewHold
             holder.cardView.setClickable(false);
         }
     }
-
     private void openChartDetail(BiomechanicalChart chart, int position) {
+
         if (!(context instanceof FragmentActivity)) return;
 
         FragmentActivity activity = (FragmentActivity) context;
 
-        EnduranceDetailFragment fragment = new EnduranceDetailFragment();
+        Fragment fragment;
 
-        // Create Bundle with arguments
+        // Decide which fragment to open
+        switch (chart.getTitle()) {
+
+            case "Walking Speed":
+                fragment = new WalkingSpeedDetailFragment();
+                break;
+
+            case "Endurance":
+                fragment = new EnduranceDetailFragment();
+                break;
+
+            case "Balance":
+                fragment = new BalanceDetailFragment();
+                break;
+
+            default:
+                return;
+        }
+
+        // Pass data using Bundle
         Bundle args = new Bundle();
         args.putString("chart_title", chart.getTitle());
         fragment.setArguments(args);
@@ -71,7 +90,7 @@ public class BiomechanicalAdapter extends RecyclerView.Adapter<ChartCardViewHold
         activity.getSupportFragmentManager()
                 .beginTransaction()
                 .replace(R.id.fragment_container, fragment)
-                .addToBackStack("endurance_detail")
+                .addToBackStack(chart.getTitle() + "_detail")
                 .commit();
     }
 

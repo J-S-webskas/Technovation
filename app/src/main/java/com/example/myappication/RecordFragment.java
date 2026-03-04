@@ -45,6 +45,11 @@ public class RecordFragment extends Fragment {
 
     // TODO: (MANREEN) GUIDELINE: CREATE OWN INSTANCE VARIABLE TO STORE THE ANGLE FOR BALANCE ETC
     private static Map<String, ArrayDeque<Float>> angleHistories = new HashMap<>(); // stores knee angles for one recording session at a time.
+    private static Map<String, ArrayDeque<Float>> BalanceHistories = new HashMap<>();
+
+    private static Map<String, Float> tempSpeedResults = new HashMap<>();
+    private static Map<String, Float> tempBalanceResults = new HashMap<>();
+    private static Map<String, Float> tempEnduranceResults = new HashMap<>();
 
     // Test tracking
     private enum TestType { NONE, BASELINE, DUAL_TASK, SENSORY_ATAXIA }  // Manage three test types. Ensure they are performed in order (baseline first, then others).
@@ -70,9 +75,30 @@ public class RecordFragment extends Fragment {
         btnDualTask.setOnClickListener(v -> startDualTaskTest());
         btnSensory.setOnClickListener(v -> startSensoryAtaxiaTest());
         // TODO: SPEED ON CLICK LISTENER
+        btnSpeed.setOnClickListener(v -> {
+            Intent intent = new Intent(requireContext(), Speed.class);
+            startActivity(intent);
+        });
     }
 
-    // TODO: (MANREEN) GUIDELINE: CREATE OWN METHOD FOR ADDING THESE ANGLES FROM POSELANDMARKERHELPER TO INSTANCE VARIABLE
+    // TODO: (MANREEN) GUIDELINE: CREATE OWN METHOD FOR ADDING THESE ANGLES FROM POSELANDMARKERHELPER TO INSTANCE VARIABLE - Done
+    public static void HipBalanceaddAnglePerFrame(String name, float hip_angle) {
+        ArrayDeque<Float> HipAngles = BalanceHistories.get(name);
+        if (HipAngles == null) {
+            HipAngles = new ArrayDeque<>();
+            BalanceHistories.put(name, HipAngles);
+        }
+        HipAngles.add(hip_angle);
+    }
+    public static void KneeBalanceaddAnglePerFrame(String name, float knee_angle) {
+        ArrayDeque<Float> KneeAngles = BalanceHistories.get(name);
+        if (KneeAngles == null) {
+            KneeAngles = new ArrayDeque<>();
+            BalanceHistories.put(name, KneeAngles);
+        }
+        KneeAngles.add(knee_angle);
+    }
+
 
     // Add angle per frame from PoseLandmarkerHelper to Map<String, ArrayDeque<Float>> angleHistories. Called from PoseLandmarkerHlper
     public static void addAnglePerFrame(String name, float angle) {
@@ -109,6 +135,10 @@ public class RecordFragment extends Fragment {
 
         if (angleHistories != null) {
             angleHistories.clear();
+        }
+
+        if (BalanceHistories != null) {
+            BalanceHistories.clear();
         }
 
         String testName = getTestName(cancelledTest);
@@ -281,19 +311,30 @@ public class RecordFragment extends Fragment {
 
     private void saveOtherTestResults(TestType currentTestType) {
         // Calculate metrics (same as baseline
-        float currentSpeed = 0.0f;
-        // Calculate walking speed comparison with baseline
+        float currentSpeed = Speed.currentSpeed;
+
         TestComparisons comparisons = currentAssessment.getComparisons();
-        if (currentAssessment.getBaseline().getWalkingSpeed() > 0) {
-            float baselineSpeed = currentAssessment.getBaseline().getWalkingSpeed();
-            float speedChange = ((currentSpeed - baselineSpeed) / baselineSpeed) * 100;
-            if (currentTestType == TestType.SENSORY_ATAXIA) {
-                comparisons.setSensoryAtaxiaSpeedChange(speedChange);
-            } else {
-                comparisons.setDualTaskSpeedChange(speedChange);
+
+        // -------------------- SPEED --------------------
+        if (!currentAssessment.getBaseline().getWalkingSpeed().isEmpty()) {
+
+            Float baselineSpeed = currentAssessment.getBaseline()
+                    .getWalkingSpeed()
+                    .get("overall");
+
+            if (baselineSpeed != null && baselineSpeed > 0) {
+
+                float speedChange = ((currentSpeed - baselineSpeed) / baselineSpeed) * 100f;
+
+                if (currentTestType == TestType.SENSORY_ATAXIA) {
+                    comparisons.setSensoryAtaxiaSpeedChange(speedChange);
+                } else {
+                    comparisons.setDualTaskSpeedChange(speedChange);
+                }
             }
         }
-//        float currentBalance = GaitAnalyzer.calculateBalance(, );
+
+        // -------------------- ARJ --------------------
         Map<String, Float> ARJScores = new HashMap<>();
         for (String joint : Arrays.asList("left_knee", "right_knee")) {
             float ARJ = AverageRectifiedJerk.calculateAverageRectifiedJerk(
@@ -301,6 +342,17 @@ public class RecordFragment extends Fragment {
             );
             ARJScores.put(joint, ARJ);
         }
+
+        // -------------------- BALANCE --------------------
+        Map<String, Float> BalanceScores = new HashMap<>();
+
+        float balance = BalanceCalculator.calculateOffBalance(
+                BalanceHistories.get("left_hip"),
+                BalanceHistories.get("left_knee")
+        );
+
+        BalanceScores.put("overall", balance);
+
         // TODO: (MANREEN) GUIDELINE: CALL PYTHON CODE WITH THE INSTANCE VARIABLE CONTAINING THE DATA INTO ITS PARAMETER, GET THE RESULT, PASS IT INTO A VARIABLE OR SOMETHING, AND STORE THAT IN CURRENT ASSESSMENT.GETBASELINE().SETBALANCE() OR SETENDURANCE()
         if (!currentAssessment.getBaseline().getARJ().isEmpty()) {
             float baselineARJForKnee = currentAssessment.getBaseline().getARJ().get("knee");
@@ -312,44 +364,65 @@ public class RecordFragment extends Fragment {
             }
         }
 
-//        if (!currentAssessment.getBaseline().getAsymmetry().isEmpty()) {
-//            float baselineStiffnessForKnee = currentAssessment.getBaseline().getStiffness().get("knee");
-//            float stiffnessChangeForKnee = (ARJScores.get("knee") - baselineStiffnessForKnee) / baselineStiffnessForKnee * 100;
-//            if (currentTestType == TestType.SENSORY_ATAXIA) {
-//                comparisons.setSensoryAtaxiaStiffnessChange(stiffnessChangeForKnee);
-//            } else {
-//                comparisons.setDualTaskStiffnessChange(stiffnessChangeForKnee);
-//            }
-//        }
+        //Balance
+        if (!currentAssessment.getBaseline().getBalanceScore().isEmpty()) {
+            Float baselineBalance = currentAssessment.getBaseline()
+                    .getBalanceScore()
+                    .get("overall");
+            if (baselineBalance != null && baselineBalance > 0) {
+                float balanceChange = (balance - baselineBalance) / baselineBalance * 100f;
 
-        // Save to currentAssessment's SENSORY_ATAXIA & DUAL_TASK section. IS THIS NECESSARY?
-//        if (currentTestType == TestType.SENSORY_ATAXIA) {
-//            currentAssessment.getSensoryAtaxia().setWalkingSpeed(currentSpeed);
-//            currentAssessment.getSensoryAtaxia().setStiffness(ARJScores);
-//            currentAssessment.getSensoryAtaxia().setAsymmetry(asymmetryScores);
-//        } else {
-//            currentAssessment.getDualTask().setWalkingSpeed(currentSpeed);
-//            currentAssessment.getDualTask().setStiffness(ARJScores);
-//            currentAssessment.getDualTask().setAsymmetry(asymmetryScores);
-//        }
+                if (currentTestType == TestType.SENSORY_ATAXIA) {
+                    comparisons.setSensoryAtaxiaBalanceChange(balanceChange);
+                } else {
+                    comparisons.setDualTaskBalanceChange(balanceChange);
+                }
+            }
+        }
 
-        // TODO: CALCULATE BALANCE
-//        if (currentAssessment.getBaseline().getBalanceScore() > 0) {
-//            float baselineBalance = currentAssessment.getBaseline().getBalanceScore();
-//            float balanceChange = ((currentBalance - baselineBalance) / baselineBalance) * 100;
-//            comparisons.setSensoryAtaxiaBalanceChange(balanceChange);
-//        }
-        // TODO: Calculate endurance changes for sensory ataxia
-//        if (currentAssessment.getBaseline().getEnduranceScore() > 0) {
-//            float baselineEndurance = currentAssessment.getBaseline().getEnduranceScore();
-//            float EnduranceChange = ((currentEndurance - baselineEndurance) / baselineEndurance) * 100;
-//            comparisons.setSensoryAtaxiaEnduranceChange(enduranceChange);
-//        }
+        //Speed
+        if (!currentAssessment.getBaseline().getWalkingSpeed().isEmpty()) {
+            Float baselineSpeed = currentAssessment.getBaseline()
+                    .getWalkingSpeed()
+                    .get("overall");
+            if (baselineSpeed != null && baselineSpeed > 0) {
+
+                float speedChange = (currentSpeed - baselineSpeed) / baselineSpeed * 100f;
+
+                if (currentTestType == TestType.SENSORY_ATAXIA) {
+                    comparisons.setSensoryAtaxiaSpeedChange(speedChange);
+                } else {
+                    comparisons.setDualTaskSpeedChange(speedChange);
+                }
+            }
+        }
+
+        //Endurance
+        if (!currentAssessment.getBaseline().getEnduranceScore().isEmpty()) {
+            Float baselineEndurance = currentAssessment.getBaseline()
+                    .getEnduranceScore()
+                    .get("overall"); // Change Knee
+            float currentEndurance = totalDistance;
+
+            if (baselineEndurance != null && baselineEndurance > 0) {
+
+                float enduranceChange = (currentEndurance - baselineEndurance) / baselineEndurance * 100f;
+
+                if (currentTestType == TestType.SENSORY_ATAXIA) {
+                    comparisons.setSensoryAtaxiaEnduranceChange(enduranceChange);
+                } else {
+                    comparisons.setDualTaskEnduranceChange(enduranceChange);
+                }
+            }
+        }
+
         if (angleHistories != null) {
             angleHistories.clear();
         }
 
-        //TODO: (JENNY) ADD THE CURRENTASSESSMENT OBJEC TO INTERNAL STORAGE
+        if (BalanceHistories != null) {
+            BalanceHistories.clear();
+        }
 
 //        currentAssessment.getBaseline().setWalkingSpeed(currentSpeed);
 //        // TODO: ADD METHODS SET BALANCE AND SET ENDURANCE IN ASSESSMENT DATA (MANREEN)
@@ -364,8 +437,24 @@ public class RecordFragment extends Fragment {
 
     // TODO: baseline currently only saves ARJ. It does not save speed, balance, or endurance (code needed from Manreen)
     private void saveBaselineResults() throws IOException {
-        // Calculation speed, ARJ, asymmetry
-        float currentSpeed = 0.0f;
+        // Calculation speed
+        float currentSpeed = Speed.currentSpeed;
+        float totalDistance = Speed.totalDistance;
+
+        Map<String, Float> speedMap = new HashMap<>();
+        speedMap.put("overall", currentSpeed);
+
+        Map<String, Float> tempEnduranceResults = new HashMap<>();
+        tempEnduranceResults.put("overall", totalDistance);
+
+        Map<String, Float> BalanceScores = new HashMap<>();
+        float balance = BalanceCalculator.calculateOffBalance(
+                BalanceHistories.get("left_hip"),
+                RecordFragment.BalanceHistories.get("left_knee")
+        );
+        BalanceScores.put("overall", balance);
+
+
         Map<String, Float> ARJScores = new HashMap<>();
         for (String joint : Arrays.asList("left_knee", "right_knee")) {
             float arj = AverageRectifiedJerk.calculateAverageRectifiedJerk(
@@ -377,8 +466,9 @@ public class RecordFragment extends Fragment {
         Toast.makeText(requireContext(), "Baseline recorded!", Toast.LENGTH_SHORT).show();
 
         // Save to AssessmentData object currentAssessment
-        currentAssessment.getBaseline().setWalkingSpeed(currentSpeed);
-        // TODO: ADD METHODS SET BALANCE AND SET ENDURANCE IN ASSESSMENT DATA (MANREEN)
+        currentAssessment.getBaseline().setWalkingSpeed(speedMap);
+        currentAssessment.getBaseline().setEnduranceScore(tempEnduranceResults);
+        currentAssessment.getBaseline().setBalanceScore(BalanceScores);
         currentAssessment.getBaseline().setARJ(ARJScores);
         currentAssessment.setStatus(AssessmentData.AssessmentStatus.BASELINE_COMPLETED);
         currentAssessment.setBaselineTestDate(new Date());
@@ -388,6 +478,10 @@ public class RecordFragment extends Fragment {
 
         if (angleHistories != null) {
             angleHistories.clear();
+        }
+
+        if (BalanceHistories != null) {
+            BalanceHistories.clear();
         }
 
         Toast.makeText(requireContext(), "Baseline test saved. Next test available tomorrow.", Toast.LENGTH_LONG).show();

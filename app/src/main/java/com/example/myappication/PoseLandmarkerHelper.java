@@ -388,11 +388,16 @@ public class PoseLandmarkerHelper {
             poseLandmarkerHelperListener.onResults(bundle); // onResults is implemented inside of CameraFragment
             // Get the first (and only) PoseLandmarkerResult from the list
             List<NormalizedLandmark> landmarks = bundle.results.get(0).landmarks().get(0);  // first person's 33 landmarks all in here
-            // TODO: EXTRACT THE ANGLES NEEDED OF BALANCE (MANREEN)
+
+            float left_hip = calculateAngle(landmarks.get(11), landmarks.get(23), landmarks.get(25));
             float right_knee = calculateAngle(landmarks.get(24), landmarks.get(26), landmarks.get(28));
             float left_knee = calculateAngle(landmarks.get(23), landmarks.get(25), landmarks.get(27));
-            RecordFragment.addAnglePerFrame("right_knee", actualFrameRate);
-            RecordFragment.addAnglePerFrame("left_knee", actualFrameRate);
+
+            RecordFragment.addAnglePerFrame("right_knee", right_knee);
+            RecordFragment.addAnglePerFrame("left_knee", left_knee);
+
+            RecordFragment.HipBalanceaddAnglePerFrame("left_hip", left_hip);
+            RecordFragment.KneeBalanceaddAnglePerFrame("left_knee", left_knee);
         }
     }
 

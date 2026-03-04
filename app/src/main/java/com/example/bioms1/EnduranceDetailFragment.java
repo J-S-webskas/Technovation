@@ -1,4 +1,4 @@
-package com.example.myappication;
+package com.example.bioms1;
 
 import android.os.Bundle;
 import androidx.fragment.app.Fragment;

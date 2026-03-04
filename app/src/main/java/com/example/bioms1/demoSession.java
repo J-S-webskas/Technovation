@@ -1,4 +1,4 @@
-package com.example.myappication;
+package com.example.bioms1;
 
 import android.content.Intent;
 import android.os.Bundle;

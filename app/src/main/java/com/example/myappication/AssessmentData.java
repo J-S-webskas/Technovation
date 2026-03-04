@@ -195,103 +195,72 @@ class JointAngleData implements Serializable {
 
 // BaselineAssessment
 class BaselineAssessment implements Serializable {
-    private JointAngleData jointAngles;       // joint angles
-    private float walkingSpeed;               // m/sec
-    private Map<String, Float> ARJ;
-    private Map<String, Float> asymmetry;     // Joint asymmetry %
-    private float balanceScore;               // Calculated balance
-    private float enduranceScore;             // Baseline endurance
-    // ... getters/setters?
 
-    public float getBalanceScore() {
-        return balanceScore;
-    }
+    private JointAngleData jointAngles;
 
-    public Map<String, Float> getARJ() {
-        return ARJ;
-    }
+    private Map<String, Float> walkingSpeed = new HashMap<>();
+    private Map<String, Float> ARJ = new HashMap<>();
+    private Map<String, Float> asymmetry = new HashMap<>();
+    private Map<String, Float> balanceScore = new HashMap<>();
+    private Map<String, Float> enduranceScore = new HashMap<>();
 
-    public float getEnduranceScore() {
-        return enduranceScore;
-    }
+    public Map<String, Float> getWalkingSpeed() { return walkingSpeed; }
+    public void setWalkingSpeed(Map<String, Float> walkingSpeed) { this.walkingSpeed = walkingSpeed; }
 
-    public float getWalkingSpeed() {
-        return walkingSpeed;
-    }
+    public Map<String, Float> getARJ() { return ARJ; }
+    public void setARJ(Map<String, Float> ARJ) { this.ARJ = ARJ; }
 
-    public void setWalkingSpeed(float currentSpeed) {
-        this.walkingSpeed = currentSpeed;
-    }
+    public Map<String, Float> getBalanceScore() { return balanceScore; }
+    public void setBalanceScore(Map<String, Float> balanceScore) { this.balanceScore = balanceScore; }
 
-    public void setARJ(Map<String, Float> ARJScores) {
-        this.ARJ = ARJScores;
-    }
-
-    public void setAsymmetry(Map<String, Float> asymmetryScores) {
-        this.asymmetry = asymmetryScores;
-    }
-    // TODO: (MANREEN) WRITE GETTERS/SETTERS FOR BALANCE, AND ENDURANCE IN BASELINE ASSESSMENT, DUALTASK ASSESSMENT, AND SENSORY ATAXIA ASSESSMENT
-    // TODO: (MANREEN) DECIDE WHICH TYPE OF INSTANCE VARIABLE YOU WANT TO STORE THESE CALCULATED RESULTS IN TEMPORARILY
-    public void setBalanceScore () {
-
-    }
+    public Map<String, Float> getEnduranceScore() { return enduranceScore; }
+    public void setEnduranceScore(Map<String, Float> enduranceScore) { this.enduranceScore = enduranceScore; }
 }
 
 // DualTaskAssessment
 class DualTaskAssessment implements Serializable {
     private JointAngleData jointAngles;
-    private float walkingSpeed;
-    private Map<String, Float> ARJ;
-    private Map<String, Float> asymmetry;
-    private float balanceScore;
-    private float enduranceScore;
-    private float cognitiveLoadImpact;        // How much counting affects walking
-    public float getBalanceScore() {
-        return balanceScore;
-    }
-    public Map<String, Float> getARJ() {
-        return ARJ;
-    }
-    public float getEnduranceScore() {
-        return enduranceScore;
-    }
-    public float getWalkingSpeed() {
-        return walkingSpeed;
-    }
 
+    private Map<String, Float> walkingSpeed = new HashMap<>();
+    private Map<String, Float> ARJ = new HashMap<>();
+    private Map<String, Float> asymmetry = new HashMap<>();
+    private Map<String, Float> balanceScore = new HashMap<>();
+    private Map<String, Float> enduranceScore = new HashMap<>();
+
+    public Map<String, Float> getWalkingSpeed() { return walkingSpeed; }
+    public void setWalkingSpeed(Map<String, Float> walkingSpeed) { this.walkingSpeed = walkingSpeed; }
+
+    public Map<String, Float> getARJ() { return ARJ; }
+    public void setARJ(Map<String, Float> ARJ) { this.ARJ = ARJ; }
+
+    public Map<String, Float> getBalanceScore() { return balanceScore; }
+    public void setBalanceScore(Map<String, Float> balanceScore) { this.balanceScore = balanceScore; }
+
+    public Map<String, Float> getEnduranceScore() { return enduranceScore; }
+    public void setEnduranceScore(Map<String, Float> enduranceScore) { this.enduranceScore = enduranceScore; }
 }
 
 // SensoryAtaxiaAssessment
 class SensoryAtaxiaAssessment implements Serializable {
     private JointAngleData jointAngles;
-    private float walkingSpeed;
-    private Map<String, Float> ARJ;
-    private Map<String, Float> asymmetry;
-    private float balanceScore;
-    private float enduranceScore;
-    private float visualDependence;           // How much eyes closed affects walking
 
-    public float getBalanceScore() {
-        return balanceScore;
-    }
-    public Map<String, Float> getARJ() {
-        return ARJ;
-    }
-    public float getEnduranceScore() {
-        return enduranceScore;
-    }
-    public float getWalkingSpeed() {
-        return walkingSpeed;
-    }
-    public void setWalkingSpeed(float walkingSpeed) {
-        this.walkingSpeed = walkingSpeed;
-    }
-    public void setARJ(Map<String, Float> ARJ) {
-        this.ARJ = ARJ;
-    }
-    public void setAsymmetry (Map<String, Float> asymmetry) {
-        this.asymmetry = asymmetry;
-    }
+    private Map<String, Float> walkingSpeed = new HashMap<>();
+    private Map<String, Float> ARJ = new HashMap<>();
+    private Map<String, Float> asymmetry = new HashMap<>();
+    private Map<String, Float> balanceScore = new HashMap<>();
+    private Map<String, Float> enduranceScore = new HashMap<>();
+
+    public Map<String, Float> getWalkingSpeed() { return walkingSpeed; }
+    public void setWalkingSpeed(Map<String, Float> walkingSpeed) { this.walkingSpeed = walkingSpeed; }
+
+    public Map<String, Float> getARJ() { return ARJ; }
+    public void setARJ(Map<String, Float> ARJ) { this.ARJ = ARJ; }
+
+    public Map<String, Float> getBalanceScore() { return balanceScore; }
+    public void setBalanceScore(Map<String, Float> balanceScore) { this.balanceScore = balanceScore; }
+
+    public Map<String, Float> getEnduranceScore() { return enduranceScore; }
+    public void setEnduranceScore(Map<String, Float> enduranceScore) { this.enduranceScore = enduranceScore; }
 }
 
 class TestComparisons implements Serializable {
