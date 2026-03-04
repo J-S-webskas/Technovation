@@ -3,8 +3,8 @@ plugins {
 }
 
 android {
-    namespace = "com.example.myappication"
-    compileSdk = 35
+    namespace = "com.example.bioms1"
+    compileSdk = 36
 
     buildFeatures {
         dataBinding {
@@ -13,17 +13,13 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.myappication"
-        minSdk = 24
-        targetSdk = 34
+        applicationId = "com.example.bioms1"
+        minSdk = 26
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        ndk {
-            abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))
-        }
     }
 
     buildTypes {
@@ -39,6 +35,8 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+    buildFeatures {
+        viewBinding = true
 
     packagingOptions {
         resources {
@@ -67,13 +65,14 @@ android {
         }
     }
 }
-
+//Commit note
 dependencies {
+
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.constraintlayout)
-    implementation(libs.camera.view)
-
+    implementation(libs.navigation.fragment)
+    implementation(libs.navigation.ui)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

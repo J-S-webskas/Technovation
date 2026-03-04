@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Tittle">textsize</style>
+
+    <style name="TittleSize">
+        <item name = "android:textSize">28sp</item>
+    </style>
+</resources>
