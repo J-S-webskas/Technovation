@@ -82,7 +82,7 @@ public class Speed extends AppCompatActivity implements LocationListener {
         distanceTV = findViewById(R.id.distanceTV);
 
 //        pointerSpeedometer = findViewById(R.id.speedometer);
-//        pointerSpeedometer.setMaxSpeed(200);
+//        pointerSpeedometer.setMaxSpeed(0);
 
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
