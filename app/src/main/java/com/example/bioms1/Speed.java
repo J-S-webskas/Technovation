@@ -111,7 +111,7 @@ public class Speed extends AppCompatActivity implements LocationListener {
         }
     }
 
-    private float calculateAverageSpeed() {
+    private calculateAverageSpeed() {
         float sum = 0.0f;
         for (float s : speedList) {
             sum += s;
@@ -145,7 +145,7 @@ public class Speed extends AppCompatActivity implements LocationListener {
         }
 
         float averageSpeed = calculateAverageSpeed();
-        float currentSpeed = averageSpeed;
+        currentSpeed = averageSpeed;
 
         if (previousLocation != null) {
             float distance = previousLocation.distanceTo(location);
