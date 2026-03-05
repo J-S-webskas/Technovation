@@ -1,4 +1,4 @@
-package com.example.bioms1;
+package com.example.myappication;
 
 import java.io.Serializable;
 import java.util.Calendar;
@@ -198,23 +198,24 @@ class BaselineAssessment implements Serializable {
 
     private JointAngleData jointAngles;
 
-    private Map<String, Float> walkingSpeed = new HashMap<>();
+    private float walkingSpeed;
+    private float balanceScore;
+    private float enduranceScore;
+
     private Map<String, Float> ARJ = new HashMap<>();
     private Map<String, Float> asymmetry = new HashMap<>();
-    private Map<String, Float> balanceScore = new HashMap<>();
-    private Map<String, Float> enduranceScore = new HashMap<>();
 
-    public Map<String, Float> getWalkingSpeed() { return walkingSpeed; }
-    public void setWalkingSpeed(Map<String, Float> walkingSpeed) { this.walkingSpeed = walkingSpeed; }
+    public float getWalkingSpeed() { return walkingSpeed; }
+    public void setWalkingSpeed(float walkingSpeed) { this.walkingSpeed = walkingSpeed; }
 
     public Map<String, Float> getARJ() { return ARJ; }
     public void setARJ(Map<String, Float> ARJ) { this.ARJ = ARJ; }
 
-    public Map<String, Float> getBalanceScore() { return balanceScore; }
-    public void setBalanceScore(Map<String, Float> balanceScore) { this.balanceScore = balanceScore; }
+    public float getBalanceScore() { return balanceScore; }
+    public void setBalanceScore(float balanceScore) { this.balanceScore = balanceScore; }
 
-    public Map<String, Float> getEnduranceScore() { return enduranceScore; }
-    public void setEnduranceScore(Map<String, Float> enduranceScore) { this.enduranceScore = enduranceScore; }
+    public float getEnduranceScore() { return enduranceScore; }
+    public void setEnduranceScore(float enduranceScore) { this.enduranceScore = enduranceScore; }
 }
 
 // DualTaskAssessment
@@ -222,23 +223,23 @@ class DualTaskAssessment implements Serializable {
 
     private JointAngleData jointAngles;
 
-    private Map<String, Float> walkingSpeed = new HashMap<>();
+    private float walkingSpeed;
+    private float balanceScore;
+    private float enduranceScore;
     private Map<String, Float> ARJ = new HashMap<>();
     private Map<String, Float> asymmetry = new HashMap<>();
-    private Map<String, Float> balanceScore = new HashMap<>();
-    private Map<String, Float> enduranceScore = new HashMap<>();
 
-    public Map<String, Float> getWalkingSpeed() { return walkingSpeed; }
-    public void setWalkingSpeed(Map<String, Float> walkingSpeed) { this.walkingSpeed = walkingSpeed; }
+    public float getWalkingSpeed() { return walkingSpeed; }
+    public void setWalkingSpeed(float walkingSpeed) { this.walkingSpeed = walkingSpeed; }
 
     public Map<String, Float> getARJ() { return ARJ; }
     public void setARJ(Map<String, Float> ARJ) { this.ARJ = ARJ; }
 
-    public Map<String, Float> getBalanceScore() { return balanceScore; }
-    public void setBalanceScore(Map<String, Float> balanceScore) { this.balanceScore = balanceScore; }
+    public float getBalanceScore() { return balanceScore; }
+    public void setBalanceScore(float balanceScore) { this.balanceScore = balanceScore; }
 
-    public Map<String, Float> getEnduranceScore() { return enduranceScore; }
-    public void setEnduranceScore(Map<String, Float> enduranceScore) { this.enduranceScore = enduranceScore; }
+    public float getEnduranceScore() { return enduranceScore; }
+    public void setEnduranceScore(float enduranceScore) { this.enduranceScore = enduranceScore; }
 }
 
 // SensoryAtaxiaAssessment
@@ -246,23 +247,23 @@ class SensoryAtaxiaAssessment implements Serializable {
 
     private JointAngleData jointAngles;
 
-    private Map<String, Float> walkingSpeed = new HashMap<>();
+    private float walkingSpeed;
+    private float balanceScore;
+    private float enduranceScore;
     private Map<String, Float> ARJ = new HashMap<>();
     private Map<String, Float> asymmetry = new HashMap<>();
-    private Map<String, Float> balanceScore = new HashMap<>();
-    private Map<String, Float> enduranceScore = new HashMap<>();
 
-    public Map<String, Float> getWalkingSpeed() { return walkingSpeed; }
-    public void setWalkingSpeed(Map<String, Float> walkingSpeed) { this.walkingSpeed = walkingSpeed; }
+    public float getWalkingSpeed() { return walkingSpeed; }
+    public void setWalkingSpeed(float walkingSpeed) { this.walkingSpeed = walkingSpeed; }
 
     public Map<String, Float> getARJ() { return ARJ; }
     public void setARJ(Map<String, Float> ARJ) { this.ARJ = ARJ; }
 
-    public Map<String, Float> getBalanceScore() { return balanceScore; }
-    public void setBalanceScore(Map<String, Float> balanceScore) { this.balanceScore = balanceScore; }
+    public float getBalanceScore() { return balanceScore; }
+    public void setBalanceScore(float balanceScore) { this.balanceScore = balanceScore; }
 
-    public Map<String, Float> getEnduranceScore() { return enduranceScore; }
-    public void setEnduranceScore(Map<String, Float> enduranceScore) { this.enduranceScore = enduranceScore; }
+    public float getEnduranceScore() { return enduranceScore; }
+    public void setEnduranceScore(float enduranceScore) { this.enduranceScore = enduranceScore; }
 }
 
 class TestComparisons implements Serializable {
