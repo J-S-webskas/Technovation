@@ -52,7 +52,7 @@ public class Speed extends AppCompatActivity implements LocationListener {
     private Runnable resetSpeedRunnable;
 //    private PointerSpeedometer pointerSpeedometer;
     private float maxSpeed = 0.0f;
-    private float totalDistance = 0.0f;
+    public static float totalDistance = 0.0f;
     private Location previousLocation;
     private final ArrayList<Float> speedList = new ArrayList<>();
     private final ActivityResultLauncher<String> activityResultLauncher = registerForActivityResult(new ActivityResultContracts.RequestPermission(), new ActivityResultCallback<Boolean>() {
@@ -144,7 +144,7 @@ public class Speed extends AppCompatActivity implements LocationListener {
         }
 
         float averageSpeed = calculateAverageSpeed();
-        float currentSpeed = averageSpeed;
+        static float currentSpeed = averageSpeed;
 
         if (previousLocation != null) {
             float distance = previousLocation.distanceTo(location);
