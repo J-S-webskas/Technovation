@@ -292,7 +292,7 @@ class TestComparisons implements Serializable {
         this.dualTaskBalanceChange = value;
     }
     public void setDualTaskEnduranceChange(float value) {
-        this.sensoryAtaxiaBalanceChange = value;
+        this.dualTaskEnduranceChange = value;
     }
 
     public void setDualTaskARJChange(float value) {
@@ -315,4 +315,5 @@ class TestComparisons implements Serializable {
     public void setSensoryAtaxiaEnduranceChange(float value) {
         this.sensoryAtaxiaBalanceChange = value;
     }
+
 }
