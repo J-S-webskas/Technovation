@@ -1,4 +1,4 @@
-package com.example.bioms1;
+package com.example.myappication;
 
 import android.os.Bundle;
 
@@ -116,20 +116,20 @@ public class TrendFragment extends Fragment {
 
     private EnduranceChart createEmptyEnduranceChart() {
         Map<Date, Float> emptyData = new HashMap<>();
-        EnduranceChart chart = new EnduranceChart(3, "Endurance", emptyData, "No Data");
+        EnduranceChart chart = new EnduranceChart(3, "Endurance", emptyData);
         return chart;
     }
 
     private WalkingSpeedChart createEmptyWalkingSpeedChart() {
         Map<Date, Float> emptyData = new HashMap<>();
-        WalkingSpeedChart chart = new WalkingSpeedChart(4, "Walking Speed", emptyData, "No Data");
+        WalkingSpeedChart chart = new WalkingSpeedChart(4, "Walking Speed", emptyData);
         return chart;
     }
 
     // REAL DATA CHARTS
     private BalanceChart createBalanceChartFromData(List<AssessmentData> assessments) {
         // Extract data from all three test types
-        Map<Date, Float> baselineData = new TreeMap<>(); // TreeMap ensures that dates are ordered: important for time series charts.
+        Map<Date, Float> baselineData = new TreeMap<>();
         Map<Date, Float> dualTaskData = new TreeMap<>();
         Map<Date, Float> sensoryAtaxiaData = new TreeMap<>();
 
@@ -275,7 +275,7 @@ public class TrendFragment extends Fragment {
             condition = determineEnduranceCondition(latestValue);
         }
 
-        EnduranceChart chart = new EnduranceChart(3, "Endurance", baselineData, condition);
+        EnduranceChart chart = new EnduranceChart(3, "Endurance", baselineData);
 
         if (!dualTaskData.isEmpty()) {
             chart.setDualTaskData(dualTaskData);
@@ -324,7 +324,7 @@ public class TrendFragment extends Fragment {
             condition = determineWalkingSpeedCondition(latestValue);
         }
 
-        WalkingSpeedChart chart = new WalkingSpeedChart(4, "Walking Speed", baselineData, condition);
+        WalkingSpeedChart chart = new WalkingSpeedChart(4, "Walking Speed", baselineData);
 
         if (!dualTaskData.isEmpty()) {
             chart.setDualTaskData(dualTaskData);
