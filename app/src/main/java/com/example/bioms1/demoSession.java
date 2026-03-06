@@ -1,4 +1,4 @@
-package com.example.bioms1;
+package com.example.myappication;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -18,26 +18,13 @@ public class demoSession extends AppCompatActivity {
         setContentView(R.layout.activity_demo_session);
 
         recordButton = findViewById(R.id.record_button);
-        cancelButton = findViewById(R.id.cancel_button);
 
-        // When Cancel is clicked → go back to MainActivity
-        cancelButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(demoSession.this, MainActivity.class);
-                startActivity(intent);
-                finish(); // closes demoSession
-            }
-        });
-
-        // When Record is clicked → open MainActivity and load RecordFragment
+        // When Record is clicked navigate to RecordFragment
         recordButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(demoSession.this, MainActivity.class);
-                intent.putExtra("openFragment", "record");
+                Intent intent = new Intent(demoSession.this, RecordFragment.class);
                 startActivity(intent);
-                finish(); // closes demoSession
             }
         });
     }
