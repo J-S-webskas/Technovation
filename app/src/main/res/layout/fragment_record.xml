@@ -10,18 +10,27 @@
         tools:context=".MainActivity"
         android:background="@android:color/white">
 
-        <com.google.android.material.appbar.MaterialToolbar
+        <com.google.android.material.appbar.AppBarLayout
             android:id="@+id/topBar"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:background="@color/design_default_color_secondary"
+            android:layout_height="60dp"
+            android:fitsSystemWindows="true"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:title="BioMS"
-            app:titleTextColor="@color/white"
-            app:titleTextAppearance="@style/BoldToolbarTitle"
-            app:titleCentered="true" />
+            app:layout_constraintTop_toTopOf="parent">
+
+            <TextView
+                android:id="@+id/Title"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:background="@color/design_default_color_secondary"
+                android:paddingVertical="5dp"
+                android:text="Sessions"
+                android:textAlignment="center"
+                android:textColor="@color/white"
+                android:textSize="32sp"
+                android:textStyle="bold" />
+
+        </com.google.android.material.appbar.AppBarLayout>
 
 
         <ScrollView
@@ -50,7 +59,6 @@
                     android:text="Select a test to record"
                     android:textSize="20dp"
                     android:textStyle="bold"
-                    android:textColor="#FF0000"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
@@ -252,6 +260,20 @@
 
             </androidx.constraintlayout.widget.ConstraintLayout>
         </ScrollView>
+
+        <Button
+            android:id="@+id/howTo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="How to Record Symptoms"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAlignment="center"
+            android:textSize="20sp"
+            android:background="@color/JGreen"
+            android:padding="15dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/scrollView2" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>
